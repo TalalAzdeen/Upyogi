@@ -207,7 +207,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         Text("by ${widget.service.providerName}",
                             style: const TextStyle(color: Colors.grey, fontSize: 12)),
                         const SizedBox(height: 4),
-                        Text("₹${widget.service.startingPrice.toStringAsFixed(0)}",
+                        Text("SAR ${widget.service.startingPrice.toStringAsFixed(2)}",
                             style: const TextStyle(
                                 color: kPrimaryPurple, fontWeight: FontWeight.bold, fontSize: 14)),
                       ],

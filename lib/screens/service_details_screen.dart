@@ -331,7 +331,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text("Starting from", style: TextStyle(fontSize: 11, color: Colors.grey)),
-                      Text("₹${s.startingPrice.toStringAsFixed(0)} / ${s.priceType}",
+                      Text("SAR ${s.startingPrice.toStringAsFixed(2)} / ${s.priceType}",
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ],
                   ),

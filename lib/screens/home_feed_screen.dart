@@ -414,7 +414,7 @@ class _FeaturedServiceCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          "₹${service.startingPrice.toStringAsFixed(0)}",
+                          "SAR ${service.startingPrice.toStringAsFixed(2)}",
                           style: const TextStyle(
                               color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                         ),

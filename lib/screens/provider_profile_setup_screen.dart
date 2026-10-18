@@ -327,7 +327,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
                     const SizedBox(height: 24),
 
                     // Price Range
-                    _sectionTitle("Price Range (₹)"),
+                    _sectionTitle("Price Range (SAR )"),
                     Row(
                       children: [
                         Expanded(

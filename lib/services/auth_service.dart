@@ -60,6 +60,13 @@ class AuthService {
       final user = data['user'] as Map;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', data['token']);
+      if (data['refreshToken'] is String) {
+        await prefs.setString('refreshToken', data['refreshToken']);
+        await prefs.setInt('expiresAt', data['expiresAt'] is int ? data['expiresAt'] : 0);
+      } else {
+        await prefs.remove('refreshToken');
+        await prefs.remove('expiresAt');
+      }
       await prefs.setString('role', user['role']);
       await prefs.setString('fullName', user['fullName']?.toString() ?? '');
       await prefs.remove('profileImageUrl');
