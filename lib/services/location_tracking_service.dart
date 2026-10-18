@@ -1,8 +1,9 @@
 import 'package:signalr_netcore/signalr_client.dart';
+import 'app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocationTrackingService {
-  static const String hubUrl = "https://servicebookingapi.onrender.com/hubs/location";
+  static String get hubUrl => AppConfig.locationHubUrl;
 
   HubConnection? _hubConnection;
 
@@ -12,7 +13,7 @@ class LocationTrackingService {
 
     _hubConnection = HubConnectionBuilder()
         .withUrl(
-          "$hubUrl?access_token=$token",
+          hubUrl,
           options: HttpConnectionOptions(
             accessTokenFactory: () async => token,
           ),
@@ -20,7 +21,7 @@ class LocationTrackingService {
         .withAutomaticReconnect()
         .build();
 
-    await _hubConnection!.start();
+    await _hubConnection!.start()?.timeout(const Duration(seconds: 30));
   }
 
   Future<void> joinBookingGroup(int bookingId) async {
@@ -46,6 +47,12 @@ class LocationTrackingService {
   }
 
   Future<void> disconnect() async {
-    await _hubConnection?.stop();
+    final connection = _hubConnection;
+    _hubConnection = null;
+    try {
+      await connection?.stop()?.timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Cleanup must not surface an unhandled exception after screen disposal.
+    }
   }
 }
