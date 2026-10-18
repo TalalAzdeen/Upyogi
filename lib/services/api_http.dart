@@ -71,26 +71,6 @@ Future<http.Response> delete(Uri url, {Map<String, String>? headers}) =>
 
 class MultipartRequest extends http.MultipartRequest {
   MultipartRequest(super.method, super.url);
-  Future<void>? _refreshing;
-
-  Future<void> _refreshSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    final refresh = prefs.getString('refreshToken');
-    final expiry = prefs.getInt('expiresAt') ?? 0;
-    if (refresh == null || expiry > DateTime.now().millisecondsSinceEpoch ~/ 1000 + 60) return;
-    final response = await _inner.post(Uri.parse('${AppConfig.authBaseUrl}/refresh'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'refreshToken': refresh})).timeout(timeout);
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      if (data['token'] is String && data['refreshToken'] is String && data['expiresAt'] is int) {
-        await prefs.setString('token', data['token']);
-        await prefs.setString('refreshToken', data['refreshToken']);
-        await prefs.setInt('expiresAt', data['expiresAt']);
-      }
-    }
-  }
-
   @override
   Future<http.StreamedResponse> send() => client.send(this).timeout(requestTimeout);
 }
