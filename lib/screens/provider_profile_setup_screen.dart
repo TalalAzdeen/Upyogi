@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -28,8 +29,8 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
   final _priceToController = TextEditingController();
   final _radiusController = TextEditingController();
   final _addressController = TextEditingController();
-  final _startTimeController = TextEditingController(text: "09:00");
-  final _endTimeController = TextEditingController(text: "18:00");
+  final _startTimeController = TextEditingController(text: tr(context, "09:00"));
+  final _endTimeController = TextEditingController(text: tr(context, "18:00"));
 
   String? _selectedCategory;
   final List<String> _categories = [
@@ -59,12 +60,12 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
             const SizedBox(height: 12),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: kPrimaryPurple),
-              title: const Text("Take Photo"),
+              title: const LText("Take Photo"),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library, color: kPrimaryPurple),
-              title: const Text("Choose from Gallery"),
+              title: const LText("Choose from Gallery"),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
@@ -186,12 +187,12 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Error"),
-        content: SingleChildScrollView(child: SelectableText(msg)),
+        title: const LText("Error"),
+        content: SingleChildScrollView(child: SelectableText(tr(context, msg))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+            child: const LText("OK"),
           ),
         ],
       ),
@@ -216,7 +217,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  const LText(
                     "Complete Your Profile",
                     style: TextStyle(
                       color: Colors.white,
@@ -225,7 +226,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  const LText(
                     "Help customers know more about your services",
                     style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
@@ -276,7 +277,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
                     ),
                     const SizedBox(height: 8),
                     const Center(
-                      child: Text("Add Profile Photo",
+                      child: LText("Add Profile Photo",
                           style: TextStyle(color: Colors.grey, fontSize: 12)),
                     ),
 
@@ -297,7 +298,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
                               color: selected ? kPrimaryPurple : kLightPurple,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text(
+                            child: LText(
                               cat,
                               style: TextStyle(
                                 color: selected ? Colors.white : Colors.black87,
@@ -370,8 +371,8 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
                           child: CircleAvatar(
                             radius: 22,
                             backgroundColor: selected ? kPrimaryPurple : kLightPurple,
-                            child: Text(
-                              day.substring(0, 2),
+                            child: LText(
+                              day,
                               style: TextStyle(
                                 color: selected ? Colors.white : Colors.black87,
                                 fontSize: 12,
@@ -422,7 +423,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.my_location),
-                      label: Text(_isFetchingLocation
+                      label: LText(_isFetchingLocation
                           ? "Fetching location..."
                           : "Use Current Location"),
                     ),
@@ -447,7 +448,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
                             const Icon(Icons.upload_file, color: kPrimaryPurple),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
+                              child: LText(
                                 _kycDocument != null
                                     ? "Document selected ✓"
                                     : "Upload ID Proof (Aadhar/PAN)",
@@ -482,7 +483,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
+                            : const LText(
                                 "Complete Profile",
                                 style: TextStyle(fontSize: 16, color: Colors.white),
                               ),
@@ -502,7 +503,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
   Widget _sectionTitle(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
+      child: LText(
         text,
         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
       ),
@@ -520,7 +521,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
       maxLines: maxLines,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        hintText: hint,
+        hintText: tr(context, hint),
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
         filled: true,
         fillColor: kLightPurple,
