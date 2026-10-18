@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/role_select_screen.dart';
 import 'navigation_service.dart';
+import '../l10n/app_language.dart';
 
 /// Handles a backend-rejected (expired/invalid) session: clears local auth
 /// state and drops the user back to role selection so they can log back in,
@@ -30,7 +31,7 @@ class SessionManager {
         final ctx = navigatorKey.currentContext;
         if (ctx != null) {
           ScaffoldMessenger.of(ctx).showSnackBar(
-            const SnackBar(content: Text("Session expired. Please log in again.")),
+            const SnackBar(content: LText("Session expired. Please log in again.")),
           );
         }
       });
