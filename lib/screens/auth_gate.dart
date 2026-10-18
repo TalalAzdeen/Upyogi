@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -57,11 +58,11 @@ class _AuthGateState extends ConsumerState<AuthGate> {
           _resolvedScreen = Scaffold(body: Center(child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Unable to load your profile. Check your connection.'),
+              const LText('Unable to load your profile. Check your connection.'),
               TextButton(onPressed: () {
                 setState(() => _resolvedScreen = null);
                 _resolve();
-              }, child: const Text('Retry')),
+              }, child: const LText('Retry')),
             ],
           )));
         }
