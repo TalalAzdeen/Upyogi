@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -86,7 +87,7 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
         if (mounted) {
           Navigator.pop(context, true);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Profile updated successfully")),
+            const SnackBar(content: LText("Profile updated successfully")),
           );
         }
       } else {
@@ -105,12 +106,12 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Error"),
-        content: SingleChildScrollView(child: SelectableText(msg)),
+        title: const LText("Error"),
+        content: SingleChildScrollView(child: SelectableText(tr(context, msg))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+            child: const LText("OK"),
           ),
         ],
       ),
@@ -122,7 +123,7 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const Text("Edit Profile", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const LText("Edit Profile", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
       ),
@@ -166,8 +167,8 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
             ),
             const SizedBox(height: 30),
             const Align(
-              alignment: Alignment.centerLeft,
-              child: Text("Full Name", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              alignment: AlignmentDirectional.centerStart,
+              child: LText("Full Name", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ),
             const SizedBox(height: 8),
             TextField(
@@ -196,7 +197,7 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
                     ? const SizedBox(
                         height: 20, width: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text("Save Changes", style: TextStyle(color: Colors.white)),
+                    : const LText("Save Changes", style: TextStyle(color: Colors.white)),
               ),
             ),
           ],
