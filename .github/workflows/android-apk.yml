@@ -1,0 +1,48 @@
+name: Build Android APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Prepare app configuration
+        env:
+          AUTH_BASE_URL: ${{ vars.AUTH_BASE_URL }}
+          STRIPE_PUBLISHABLE_KEY: ${{ vars.STRIPE_PUBLISHABLE_KEY }}
+        shell: python
+        run: |
+          import os
+          from pathlib import Path
+          values = {
+              'AUTH_BASE_URL': os.environ.get('AUTH_BASE_URL') or 'https://example.invalid/api/Auth',
+              'STRIPE_PUBLISHABLE_KEY': os.environ.get('STRIPE_PUBLISHABLE_KEY', ''),
+          }
+          if any(chr(10) in v or chr(13) in v for v in values.values()):
+              raise SystemExit('App configuration must use single-line values')
+          Path('.env').write_text(''.join(f'{k}={v}'+chr(10) for k,v in values.items()))
+          if not os.environ.get('AUTH_BASE_URL'):
+              print('::warning::Set AUTH_BASE_URL repository variable to enable login.')
+      - run: flutter pub get
+      - name: Build installable test APK
+        run: flutter build apk --debug
+      - run: cp build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/Upyogi-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Upyogi-APK
+          path: build/app/outputs/flutter-apk/Upyogi-debug.apk
+          if-no-files-found: error
+          retention-days: 14
