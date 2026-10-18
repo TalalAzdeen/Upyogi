@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_provider.dart';
 import '../services/provider_service.dart';
 import '../services/role_provider.dart';
@@ -22,6 +23,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -256,13 +265,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (_isLogin) {
       final success = await ref.read(authProvider.notifier).login(
             _emailController.text.trim(),
-            _passwordController.text.trim(),
+            _passwordController.text,
           );
       if (success && mounted) {
-        if (role == "Provider") {
+        final prefs = await SharedPreferences.getInstance();
+        if (!mounted) return;
+        final actualRole = prefs.getString('role') ?? 'Customer';
+        ref.read(selectedRoleProvider.notifier).state = actualRole;
+        if (actualRole == "Provider") {
           final profileResult = await ProviderService.getMyProfile();
           if (profileResult["sessionExpired"] == true) return;
           if (!mounted) return;
+          if (profileResult['success'] != true && profileResult['notFound'] != true) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Unable to load your profile. Please try again.')));
+            return;
+          }
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -282,7 +300,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       final success = await ref.read(authProvider.notifier).register(
             _nameController.text.trim(),
             _emailController.text.trim(),
-            _passwordController.text.trim(),
+            _passwordController.text,
             role,
           );
       if (success && mounted) {
