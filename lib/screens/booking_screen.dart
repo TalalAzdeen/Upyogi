@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../models/service_model.dart';
 import '../services/booking_service.dart';
 import '../services/payment_service.dart';
+import '../services/app_config.dart';
 import 'map_picker_screen.dart';
 
 const kPrimaryPurple = Color(0xFF6C5CE7);
@@ -25,6 +26,16 @@ class _BookingScreenState extends State<BookingScreen> {
   final _phoneController = TextEditingController();
   bool _isSubmitting = false;
   LatLng? _selectedLocation;
+  int? _pendingBookingId;
+  bool _paymentSubmitted = false;
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    _notesController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -39,7 +50,7 @@ class _BookingScreenState extends State<BookingScreen> {
         child: child!,
       ),
     );
-    if (picked != null) setState(() => _selectedDate = picked);
+    if (picked != null && mounted) setState(() => _selectedDate = picked);
   }
 
   Future<void> _pickTime() async {
@@ -53,7 +64,7 @@ class _BookingScreenState extends State<BookingScreen> {
         child: child!,
       ),
     );
-    if (picked != null) setState(() => _selectedTime = picked);
+    if (picked != null && mounted) setState(() => _selectedTime = picked);
   }
 
   Future<void> _pickLocation() async {
@@ -66,93 +77,74 @@ class _BookingScreenState extends State<BookingScreen> {
         ),
       ),
     );
-    if (result != null) {
+    if (result != null && mounted) {
       setState(() => _selectedLocation = result);
     }
   }
 
   Future<void> _confirmBooking() async {
-    if (_selectedDate == null) return _showError("Please select a date");
-    if (_selectedTime == null) return _showError("Please select a time");
-    if (_addressController.text.trim().isEmpty) return _showError("Please enter service address");
-    if (_phoneController.text.trim().isEmpty) return _showError("Please enter your phone number");
-
-    setState(() => _isSubmitting = true);
-
-    final timeStr = _selectedTime!.format(context);
-
-    final result = await BookingService.createBooking(
-      serviceId: widget.service.id,
-      appointmentDate: _selectedDate!,
-      appointmentTime: timeStr,
-      serviceAddress: _addressController.text.trim(),
-      notes: _notesController.text.trim(),
-      customerPhone: _phoneController.text.trim(),
-      latitude: _selectedLocation?.latitude,
-      longitude: _selectedLocation?.longitude,
-    );
-
-    if (result["sessionExpired"] == true) return;
-
-    if (result["success"] != true) {
-      setState(() => _isSubmitting = false);
-      _showError(result["message"]?.toString() ?? "Booking failed");
-      return;
+    if (_isSubmitting) return;
+    if (_paymentSubmitted) return _showError('Payment confirmation is pending. Check your bookings before paying again.');
+    if (!AppConfig.paymentsEnabled) {
+      return _showError('Online payment is not configured yet. Please contact the service operator.');
     }
-
-    debugPrint("createBooking -> data: ${result["data"]}");
-
+    if (_selectedDate == null) return _showError('Please select a date');
+    if (_selectedTime == null) return _showError('Please select a time');
+    if (_addressController.text.trim().isEmpty) return _showError('Please enter service address');
+    if (_phoneController.text.trim().isEmpty) return _showError('Please enter your phone number');
+    final appointment = DateTime(_selectedDate!.year, _selectedDate!.month,
+        _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute);
+    if (!appointment.isAfter(DateTime.now())) return _showError('Choose a future appointment.');
+    setState(() => _isSubmitting = true);
     try {
-      final data = result["data"];
-      final bookingData = data is Map && data["booking"] != null ? data["booking"] : data;
-      final bookingId = bookingData["id"];
-      if (bookingId == null) {
-        throw Exception("No booking id in response: $data");
+      if (_pendingBookingId == null) {
+        final time = '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}';
+        final result = await BookingService.createBooking(
+          serviceId: widget.service.id, appointmentDate: _selectedDate!,
+          appointmentTime: time, serviceAddress: _addressController.text.trim(),
+          notes: _notesController.text.trim(), customerPhone: _phoneController.text.trim(),
+          latitude: _selectedLocation?.latitude, longitude: _selectedLocation?.longitude);
+        if (!mounted || result['sessionExpired'] == true) return;
+        if (result['success'] != true) {
+          _showError('Booking could not be created. Please check your bookings before retrying.');
+          return;
+        }
+        final data = result['data'];
+        final booking = data is Map && data['booking'] is Map ? data['booking'] : data;
+        if (booking is! Map || booking['id'] is! int) {
+          _showError('Booking response was invalid. Check your bookings before retrying.');
+          return;
+        }
+        _pendingBookingId = booking['id'] as int;
       }
-
-      final paymentResult = await PaymentService.createPaymentIntent(bookingId);
-
-      if (paymentResult["sessionExpired"] == true) return;
-
-      debugPrint("createPaymentIntent -> data: ${paymentResult["data"]}");
-
-      if (paymentResult["success"] != true) {
-        setState(() => _isSubmitting = false);
-        _showError(paymentResult["message"]?.toString() ?? "Could not initiate payment");
+      final payment = await PaymentService.createPaymentIntent(_pendingBookingId!);
+      if (!mounted || payment['sessionExpired'] == true) return;
+      final data = payment['data'];
+      if (payment['success'] != true || data is! Map || data['clientSecret'] is! String) {
+        _showError('Unable to start payment. Your booking is still pending.');
         return;
       }
-
-      final clientSecret = paymentResult["data"]["clientSecret"];
-      if (clientSecret == null) {
-        throw Exception("No clientSecret in response: ${paymentResult["data"]}");
-      }
-
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: clientSecret,
-          merchantDisplayName: "Service Booking App",
-        ),
-      );
-
-      setState(() => _isSubmitting = false);
-
+      await Stripe.instance.initPaymentSheet(paymentSheetParameters: SetupPaymentSheetParameters(
+        paymentIntentClientSecret: data['clientSecret'], merchantDisplayName: 'Upyogi'));
+      if (!mounted) return;
       await Stripe.instance.presentPaymentSheet();
-
-      await PaymentService.confirmPayment(bookingId);
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Payment successful! Booking confirmed.")),
-        );
+      _paymentSubmitted = true;
+      if (!mounted) return;
+      final confirmed = await PaymentService.confirmPayment(_pendingBookingId!);
+      if (!mounted) return;
+      if (!confirmed) {
+        _showError('Payment was submitted but confirmation is pending. Check your bookings before paying again.');
+        return;
       }
-    } on StripeException catch (e) {
-      setState(() => _isSubmitting = false);
-      _showError("Payment cancelled or failed: ${e.error.localizedMessage}");
-    } catch (e) {
-      debugPrint("Booking/payment flow error: $e");
-      setState(() => _isSubmitting = false);
-      _showError("Something went wrong: $e");
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.pop(context);
+      messenger.showSnackBar(const SnackBar(content: Text('Payment confirmed. Booking successful.')));
+    } on StripeException {
+      if (mounted) _showError('Payment was cancelled or could not be completed. Your booking remains pending.');
+    } catch (_) {
+      if (mounted) _showError('Unable to complete the request. Check your bookings before retrying.');
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
