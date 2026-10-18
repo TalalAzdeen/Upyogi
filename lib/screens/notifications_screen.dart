@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
@@ -46,7 +47,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const Text("Notifications", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const LText("Notifications", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -55,7 +56,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ? const Center(child: CircularProgressIndicator(color: kPrimaryPurple))
           : _notifications.isEmpty
               ? const Center(
-                  child: Text("No notifications yet", style: TextStyle(color: Colors.grey)))
+                  child: LText("No notifications yet", style: TextStyle(color: Colors.grey)))
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView.builder(
@@ -93,13 +94,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(n.title,
+                                  LText(n.title,
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                   const SizedBox(height: 4),
-                                  Text(n.message,
+                                  LText(n.message,
                                       style: const TextStyle(fontSize: 13, color: Colors.black87)),
                                   const SizedBox(height: 6),
-                                  Text(_timeAgo(n.createdAt),
+                                  LText(_timeAgo(n.createdAt),
                                       style: const TextStyle(fontSize: 11, color: Colors.grey)),
                                 ],
                               ),

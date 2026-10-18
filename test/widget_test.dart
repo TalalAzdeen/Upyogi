@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:service_app/main.dart';
+import 'package:service_app/l10n/app_language.dart';
 import 'package:service_app/services/app_config.dart';
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() { SharedPreferences.setMockInitialValues({}); AppLanguage.instance.value = const Locale('en'); });
 
   testWidgets('Cold launch resolves to role selection without a session', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: MyApp()));

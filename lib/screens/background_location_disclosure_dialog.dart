@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 
 const kPrimaryPurple = Color(0xFF6C5CE7);
@@ -22,12 +23,12 @@ class BackgroundLocationDisclosureDialog extends StatelessWidget {
             children: [
               const Icon(Icons.location_on, color: kPrimaryPurple, size: 40),
               const SizedBox(height: 16),
-              const Text(
+              const LText(
                 "Background Location Access",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              const Text(
+              const LText(
                 "This app collects location data to enable live tracking of "
                 "service providers, even when the app is closed or not in "
                 "use, so customers can see the provider's location in real "
@@ -40,7 +41,7 @@ class BackgroundLocationDisclosureDialog extends StatelessWidget {
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text("Not Now", style: TextStyle(color: Colors.grey)),
+                      child: const LText("Not Now", style: TextStyle(color: Colors.grey)),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -52,7 +53,7 @@ class BackgroundLocationDisclosureDialog extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       ),
-                      child: const Text("I Understand", style: TextStyle(color: Colors.white)),
+                      child: const LText("I Understand", style: TextStyle(color: Colors.white)),
                     ),
                   ),
                 ],

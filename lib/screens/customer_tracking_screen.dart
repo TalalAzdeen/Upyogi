@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -61,14 +62,14 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Track Provider"),
+        title: const LText("Track Provider"),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
       ),
       body: _connectionError != null
           ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text(_connectionError!),
-              TextButton(onPressed: _init, child: const Text('Retry')),
+              LText(_connectionError!),
+              TextButton(onPressed: _init, child: const LText('Retry')),
             ]))
           : _isConnecting
           ? const Center(child: CircularProgressIndicator(color: kPrimaryPurple))
@@ -76,7 +77,7 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
               ? const Center(
                   child: Padding(
                     padding: EdgeInsets.all(20),
-                    child: Text(
+                    child: LText(
                       "Waiting for provider to start the service...",
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey),

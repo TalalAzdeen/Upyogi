@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -118,7 +119,7 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Service marked as completed!")),
+          const SnackBar(content: LText("Service marked as completed!")),
         );
       }
     } else {
@@ -129,7 +130,7 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
   void _showError(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
+      SnackBar(content: LText(msg), backgroundColor: Colors.red),
     );
   }
 
@@ -147,14 +148,14 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const Text("Service Tracking", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const LText("Service Tracking", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
       ),
       body: _connectionError != null
           ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text(_connectionError!),
-              TextButton(onPressed: _init, child: const Text('Retry')),
+              LText(_connectionError!),
+              TextButton(onPressed: _init, child: const LText('Retry')),
             ]))
           : _isConnecting
           ? const Center(child: CircularProgressIndicator(color: kPrimaryPurple))
@@ -176,8 +177,8 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
                         Text(b.serviceTitle,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 8),
-                        Text("Customer: ${b.customerName}", style: const TextStyle(fontSize: 13)),
-                        Text("Phone: ${b.customerPhone}", style: const TextStyle(fontSize: 13)),
+                        LText("Customer: ${b.customerName}", style: const TextStyle(fontSize: 13)),
+                        LText("Phone: ${b.customerPhone}", style: const TextStyle(fontSize: 13)),
                         const SizedBox(height: 8),
                         Text(b.serviceAddress, style: const TextStyle(fontSize: 13, color: Colors.grey)),
                       ],
@@ -195,7 +196,7 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
                           _startSharing();
                         },
                         icon: const Icon(Icons.navigation, color: Colors.white),
-                        label: const Text("Start Service & Navigate",
+                        label: const LText("Start Service & Navigate",
                             style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryPurple,
@@ -216,7 +217,7 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
                           Icon(Icons.location_on, color: Colors.green),
                           SizedBox(width: 10),
                           Expanded(
-                            child: Text("Sharing your live location with customer...",
+                            child: LText("Sharing your live location with customer...",
                                 style: TextStyle(color: Colors.green, fontSize: 13)),
                           ),
                         ],
@@ -232,7 +233,7 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                         ),
-                        child: const Text("Complete Service",
+                        child: const LText("Complete Service",
                             style: TextStyle(color: Colors.white, fontSize: 16)),
                       ),
                     ),

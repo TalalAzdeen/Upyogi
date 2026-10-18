@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import '../services/review_service.dart';
 
@@ -21,7 +22,7 @@ class _RatingDialogState extends State<RatingDialog> {
   Future<void> _submit() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a rating")),
+        const SnackBar(content: LText("Please select a rating")),
       );
       return;
     }
@@ -42,13 +43,13 @@ class _RatingDialogState extends State<RatingDialog> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Thank you for your feedback!")),
+          const SnackBar(content: LText("Thank you for your feedback!")),
         );
       }
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result["message"]?.toString() ?? "Failed to submit review")),
+          SnackBar(content: LText(result["message"]?.toString() ?? "Failed to submit review")),
         );
       }
     }
@@ -65,7 +66,7 @@ class _RatingDialogState extends State<RatingDialog> {
           children: [
             const Icon(Icons.celebration_outlined, color: kPrimaryPurple, size: 40),
             const SizedBox(height: 12),
-            const Text(
+            const LText(
               "Rate Your Experience",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -100,7 +101,7 @@ class _RatingDialogState extends State<RatingDialog> {
               controller: _commentController,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: "Write a review (optional)...",
+                hintText: tr(context, "Write a review (optional)..."),
                 hintStyle: const TextStyle(fontSize: 13, color: Colors.grey),
                 filled: true,
                 fillColor: const Color(0xFFF3F1FE),
@@ -118,7 +119,7 @@ class _RatingDialogState extends State<RatingDialog> {
                 Expanded(
                   child: TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text("Skip", style: TextStyle(color: Colors.grey)),
+                    child: const LText("Skip", style: TextStyle(color: Colors.grey)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -134,7 +135,7 @@ class _RatingDialogState extends State<RatingDialog> {
                         ? const SizedBox(
                             height: 18, width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text("Submit", style: TextStyle(color: Colors.white)),
+                        : const LText("Submit", style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],

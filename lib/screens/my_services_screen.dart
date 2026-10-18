@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import '../models/service_model.dart';
 import '../services/service_service.dart';
@@ -47,7 +48,7 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to update status")),
+          const SnackBar(content: LText("Failed to update status")),
         );
       }
     }
@@ -57,13 +58,13 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Delete Service"),
-        content: const Text("Are you sure you want to delete this service? This cannot be undone."),
+        title: const LText("Delete Service"),
+        content: const LText("Are you sure you want to delete this service? This cannot be undone."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const LText("Cancel")),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            child: const LText("Delete", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -78,7 +79,7 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
         _loadServices();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Service deleted")),
+            const SnackBar(content: LText("Service deleted")),
           );
         }
       }
@@ -90,7 +91,7 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const Text("My Services", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const LText("My Services", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -99,7 +100,7 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
           ? const Center(child: CircularProgressIndicator(color: kPrimaryPurple))
           : _services.isEmpty
               ? const Center(
-                  child: Text("You haven't uploaded any services yet",
+                  child: LText("You haven't uploaded any services yet",
                       style: TextStyle(color: Colors.grey)))
               : RefreshIndicator(
                   onRefresh: _loadServices,
@@ -141,7 +142,7 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                                           style: const TextStyle(
                                               fontWeight: FontWeight.bold, fontSize: 14)),
                                       const SizedBox(height: 4),
-                                      Text("SAR ${s.startingPrice.toStringAsFixed(2)}",
+                                      LText("SAR ${s.startingPrice.toStringAsFixed(2)}",
                                           style: const TextStyle(color: kPrimaryPurple, fontSize: 13)),
                                     ],
                                   ),
@@ -168,7 +169,7 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                                       _loadServices();
                                     },
                                     icon: const Icon(Icons.edit_outlined, size: 16),
-                                    label: const Text("Edit"),
+                                    label: const LText("Edit"),
                                     style: OutlinedButton.styleFrom(foregroundColor: kPrimaryPurple),
                                   ),
                                 ),
@@ -177,7 +178,7 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                                   child: OutlinedButton.icon(
                                     onPressed: () => _deleteService(s.id),
                                     icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
-                                    label: const Text("Delete", style: TextStyle(color: Colors.red)),
+                                    label: const LText("Delete", style: TextStyle(color: Colors.red)),
                                     style: OutlinedButton.styleFrom(
                                         side: const BorderSide(color: Colors.red)),
                                   ),

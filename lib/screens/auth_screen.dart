@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,6 +41,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     return Scaffold(
       backgroundColor: kPrimaryPurple,
+      appBar: AppBar(backgroundColor: kPrimaryPurple, foregroundColor: Colors.white, elevation: 0, actions: const [LanguageButton()]),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -47,7 +49,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 30),
-              Text(
+              LText(
                 _isLogin ? "Welcome Back" : "Create your account",
                 style: const TextStyle(
                   fontSize: 28,
@@ -56,8 +58,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                "$roleLabel • ${_isLogin ? "Sign in to continue" : "Sign up to get started"}",
+              LText(
+                '${tr(context, roleLabel)} • ${tr(context, _isLogin ? "Sign in to continue" : "Sign up to get started")}',
                 style: const TextStyle(color: Colors.white70, fontSize: 14),
               ),
               const SizedBox(height: 24),
@@ -88,7 +90,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   color: _isLogin ? kPrimaryPurple : Colors.transparent,
                                   borderRadius: BorderRadius.circular(30),
                                 ),
-                                child: Text(
+                                child: LText(
                                   "Login",
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
@@ -108,7 +110,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   color: !_isLogin ? kPrimaryPurple : Colors.transparent,
                                   borderRadius: BorderRadius.circular(30),
                                 ),
-                                child: Text(
+                                child: LText(
                                   "Register",
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
@@ -153,7 +155,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     if (authState.error != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 12),
-                        child: Text(
+                        child: LText(
                           authState.error!,
                           style: const TextStyle(color: Colors.red, fontSize: 13),
                         ),
@@ -181,7 +183,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : Text(
+                            : LText(
                                 _isLogin ? "Login" : "Register",
                                 style: const TextStyle(fontSize: 16, color: Colors.white),
                               ),
@@ -196,12 +198,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                           style: const TextStyle(color: Colors.black54),
                           children: [
                             TextSpan(
-                              text: _isLogin
+                              text: tr(context, _isLogin
                                   ? "Don't have an account? "
-                                  : "Already have an account? ",
+                                  : "Already have an account? "),
                             ),
                             TextSpan(
-                              text: _isLogin ? "Sign up" : "Sign in",
+                              text: tr(context, _isLogin ? "Sign up" : "Sign in"),
                               style: const TextStyle(
                                 color: kPrimaryPurple,
                                 fontWeight: FontWeight.bold,
@@ -226,8 +228,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(text,
+        alignment: AlignmentDirectional.centerStart,
+        child: LText(text,
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
       ),
     );
@@ -244,8 +246,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
+      textDirection: keyboardType == TextInputType.emailAddress || obscure ? TextDirection.ltr : null,
       decoration: InputDecoration(
-        hintText: hint,
+        hintText: tr(context, hint),
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
         filled: true,
         fillColor: const Color(0xFFF3F1FE),
@@ -278,7 +281,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           if (!mounted) return;
           if (profileResult['success'] != true && profileResult['notFound'] != true) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Unable to load your profile. Please try again.')));
+              content: LText('Unable to load your profile. Please try again.')));
             return;
           }
           Navigator.pushReplacement(
@@ -305,7 +308,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           );
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("تم استلام التسجيل. أكّد بريدك الإلكتروني ثم سجّل الدخول.")),
+          const SnackBar(content: LText("تم استلام التسجيل. أكّد بريدك الإلكتروني ثم سجّل الدخول.")),
         );
         setState(() => _isLogin = true);
       }
