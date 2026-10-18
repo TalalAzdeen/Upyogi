@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/role_provider.dart';
@@ -10,6 +11,7 @@ class RoleSelectScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: const Color(0xFF6C5CE7),
+      appBar: AppBar(backgroundColor: const Color(0xFF6C5CE7), foregroundColor: Colors.white, elevation: 0, actions: const [LanguageButton()]),
       body: Center(
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -21,12 +23,12 @@ class RoleSelectScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              const LText(
                 "Who are you?",
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              const Text(
+              const LText(
                 "Choose how you want to use the app",
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey),
@@ -107,11 +109,11 @@ class _RoleCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
+                  LText(title,
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 2),
-                  Text(subtitle,
+                  LText(subtitle,
                       style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),
