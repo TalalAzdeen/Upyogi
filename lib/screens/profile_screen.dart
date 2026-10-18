@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,24 +60,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _changePassword() async {
     final controller = TextEditingController();
     final value = await showDialog<String>(context: context, builder: (dialogContext) => AlertDialog(
-      title: const Text('تغيير كلمة المرور'),
-      content: TextField(controller: controller, obscureText: true, decoration: const InputDecoration(labelText: 'كلمة المرور الجديدة (8 أحرف على الأقل)')),
-      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
-        TextButton(onPressed: () => Navigator.pop(dialogContext, controller.text), child: const Text('حفظ'))],
+      title: const LText('تغيير كلمة المرور'),
+      content: TextField(controller: controller, obscureText: true, decoration: InputDecoration(labelText: tr(context, 'كلمة المرور الجديدة (8 أحرف على الأقل)'))),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const LText('إلغاء')),
+        TextButton(onPressed: () => Navigator.pop(dialogContext, controller.text), child: const LText('حفظ'))],
     ));
     // The dialog's field may still be animating out; defer disposal until it is gone.
     Future<void>.delayed(const Duration(milliseconds: 400), controller.dispose);
     if (value == null || !mounted) return;
     if (value.length < 8) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('استخدم 8 أحرف على الأقل.'))); return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: LText('استخدم 8 أحرف على الأقل.'))); return;
     }
     try {
       final prefs = await SharedPreferences.getInstance();
       final response = await http.put(Uri.parse('${AppConfig.authBaseUrl}/password'),
         headers: {'Content-Type':'application/json','Authorization':'Bearer ${prefs.getString('token') ?? ''}'}, body: jsonEncode({'password':value}));
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.statusCode == 200 ? 'تم تغيير كلمة المرور.' : 'تعذر تغيير كلمة المرور. قد يلزم تسجيل الدخول مجددًا.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: LText(response.statusCode == 200 ? 'تم تغيير كلمة المرور.' : 'تعذر تغيير كلمة المرور. قد يلزم تسجيل الدخول مجددًا.')));
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر الاتصال بالخادم.')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: LText('تعذر الاتصال بالخادم.')));
     }
   }
 
@@ -85,7 +86,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const Text("Profile", style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: const [LanguageButton()],
+        title: const LText("Profile", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -105,18 +107,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 12),
             Text(_fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text(_role, style: const TextStyle(color: Colors.grey)),
+            LText(_role, style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 30),
             ListTile(
               leading: const Icon(Icons.account_balance_wallet_outlined),
-              title: const Text('محفظتي'),
+              title: const LText('محفظتي'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletScreen())),
             ),
             if (_role == "Provider")
               ListTile(
                 leading: const Icon(Icons.business_center_outlined, color: kPrimaryPurple),
-                title: const Text("My Services"),
+                title: const LText("My Services"),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.push(
@@ -127,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ListTile(
               leading: const Icon(Icons.edit_outlined),
-              title: const Text("Edit Profile"),
+              title: const LText("Edit Profile"),
               trailing: const Icon(Icons.chevron_right),
               onTap: () async {
                 await Navigator.push(
@@ -139,21 +141,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.lock_outline),
-              title: const Text("Change Password"),
+              title: const LText("Change Password"),
               trailing: const Icon(Icons.chevron_right),
               onTap: _changePassword,
             ),
             ListTile(
               leading: const Icon(Icons.notifications_outlined),
-              title: const Text("Notifications"),
+              title: const LText("Notifications"),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
             ),
             ListTile(
               leading: const Icon(Icons.help_outline),
-              title: const Text("Help & Support"),
+              title: const LText("Help & Support"),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => showDialog<void>(context: context, builder: (_) => const AlertDialog(title: Text('الدعم'), content: Text('هذه نسخة اختبار. لا يوجد فريق دعم مدفوع مفعّل حتى الآن.'))),
+              onTap: () => showDialog<void>(context: context, builder: (_) => const AlertDialog(title: LText('الدعم'), content: LText('هذه نسخة اختبار. لا يوجد فريق دعم مدفوع مفعّل حتى الآن.'))),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -161,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: OutlinedButton.icon(
                 onPressed: _logout,
                 icon: const Icon(Icons.logout, color: Colors.red),
-                label: const Text("Logout", style: TextStyle(color: Colors.red)),
+                label: const LText("Logout", style: TextStyle(color: Colors.red)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.red),
                   padding: const EdgeInsets.symmetric(vertical: 14),
