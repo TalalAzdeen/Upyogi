@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/service_model.dart';
@@ -102,7 +103,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text("Welcome,",
+                            const LText("Welcome,",
                                 style: TextStyle(fontSize: 12, color: Colors.grey)),
                             Text(_fullName,
                                 style: const TextStyle(
@@ -131,7 +132,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                                 padding: const EdgeInsets.all(4),
                                 decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                                 constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                                child: Text(
+                                child: LText(
                                   _unreadCount > 9 ? "9+" : "$_unreadCount",
                                   style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                   textAlign: TextAlign.center,
@@ -147,7 +148,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 const SizedBox(height: 24),
 
                 // Title
-                const Text(
+                const LText(
                   "Smart Home,\nSmooth Services",
                   style: TextStyle(
                     fontSize: 28,
@@ -177,7 +178,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       }
                     },
                     decoration: InputDecoration(
-                      hintText: "Search...",
+                      hintText: tr(context, "Search..."),
                       hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
                       prefixIcon: IconButton(
                         icon: const Icon(Icons.search, color: Colors.grey),
@@ -213,7 +214,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       final cat = _categories[index];
                       final selected = _selectedCategory == cat;
                       return Padding(
-                        padding: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsetsDirectional.only(end: 8),
                         child: GestureDetector(
                           onTap: () {
                             setState(() => _selectedCategory = cat);
@@ -226,7 +227,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                               borderRadius: BorderRadius.circular(24),
                             ),
                             alignment: Alignment.center,
-                            child: Text(
+                            child: LText(
                               cat,
                               style: TextStyle(
                                 color: selected ? Colors.white : Colors.black87,
@@ -253,7 +254,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 60),
                     child: Center(
-                      child: Text("No services found yet",
+                      child: LText("No services found yet",
                           style: TextStyle(color: Colors.grey)),
                     ),
                   )
@@ -327,7 +328,7 @@ class _FeaturedServiceCard extends StatelessWidget {
                   children: [
                     const Icon(Icons.star, color: Colors.amber, size: 14),
                     const SizedBox(width: 4),
-                    Text(
+                    LText(
                       service.rating > 0 ? service.rating.toStringAsFixed(1) : "New",
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                     ),
@@ -343,7 +344,7 @@ class _FeaturedServiceCard extends StatelessWidget {
               child: CircleAvatar(
                 radius: 16,
                 backgroundColor: Colors.white,
-                child: Text(
+                child: LText(
                   service.providerName.isNotEmpty
                       ? service.providerName[0].toUpperCase()
                       : "?",
@@ -379,7 +380,7 @@ class _FeaturedServiceCard extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(
+                      child: LText(
                         service.category,
                         style: const TextStyle(color: Colors.white, fontSize: 11),
                       ),
@@ -405,7 +406,7 @@ class _FeaturedServiceCard extends StatelessWidget {
                             children: [
                               const Icon(Icons.shopping_bag_outlined, size: 16, color: kDark),
                               const SizedBox(width: 6),
-                              const Text("Book Now",
+                              const LText("Book Now",
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
@@ -413,7 +414,7 @@ class _FeaturedServiceCard extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Text(
+                        LText(
                           "SAR ${service.startingPrice.toStringAsFixed(2)}",
                           style: const TextStyle(
                               color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
