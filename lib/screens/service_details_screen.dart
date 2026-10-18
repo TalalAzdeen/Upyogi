@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import '../models/review_model.dart';
 import '../models/service_model.dart';
@@ -52,7 +53,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
 
     if (_service == null) {
       return const Scaffold(
-        body: Center(child: Text("Service not found")),
+        body: Center(child: LText("Service not found")),
       );
     }
 
@@ -111,7 +112,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                           color: kLightPurple,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Text(s.category,
+                        child: LText(s.category,
                             style: const TextStyle(color: kPrimaryPurple, fontSize: 12)),
                       ),
                       const SizedBox(height: 12),
@@ -130,12 +131,12 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                             children: [
                               const Icon(Icons.star, color: Colors.amber, size: 18),
                               const SizedBox(width: 4),
-                              Text(
+                              LText(
                                 s.rating > 0 ? s.rating.toStringAsFixed(1) : "New",
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                               ),
                               if (s.totalReviews > 0)
-                                Text(" (${s.totalReviews})",
+                                LText(" (${s.totalReviews})",
                                     style: const TextStyle(color: Colors.grey, fontSize: 12)),
                             ],
                           ),
@@ -148,13 +149,13 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                           CircleAvatar(
                             radius: 12,
                             backgroundColor: kLightPurple,
-                            child: Text(
+                            child: LText(
                               s.providerName.isNotEmpty ? s.providerName[0].toUpperCase() : "?",
                               style: const TextStyle(fontSize: 11, color: kPrimaryPurple),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Text("by ${s.providerName}",
+                          LText("by ${s.providerName}",
                               style: const TextStyle(color: Colors.grey, fontSize: 13)),
                         ],
                       ),
@@ -178,7 +179,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                       ),
 
                       const SizedBox(height: 24),
-                      const Text("About This Service",
+                      const LText("About This Service",
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 8),
                       Text(
@@ -189,14 +190,14 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                       ),
 
                       const SizedBox(height: 24),
-                      const Text("Working Hours",
+                      const LText("Working Hours",
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           const Icon(Icons.calendar_today_outlined, size: 16, color: kPrimaryPurple),
                           const SizedBox(width: 8),
-                          Text(s.workingDays.replaceAll(",", ", "),
+                          LText(s.workingDays.replaceAll(",", ", "),
                               style: const TextStyle(fontSize: 13)),
                         ],
                       ),
@@ -205,14 +206,14 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                         children: [
                           const Icon(Icons.schedule, size: 16, color: kPrimaryPurple),
                           const SizedBox(width: 8),
-                          Text("${s.startTime} - ${s.endTime}",
+                          LText("${s.startTime} - ${s.endTime}",
                               style: const TextStyle(fontSize: 13)),
                         ],
                       ),
 
                       if (s.skills.isNotEmpty) ...[
                         const SizedBox(height: 24),
-                        const Text("Skills",
+                        const LText("Skills",
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 10),
                         Wrap(
@@ -233,7 +234,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
 
                       if (s.certifications != null && s.certifications!.isNotEmpty) ...[
                         const SizedBox(height: 20),
-                        const Text("Certifications",
+                        const LText("Certifications",
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 8),
                         Text(s.certifications!, style: const TextStyle(fontSize: 13)),
@@ -241,7 +242,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
 
                       if (_reviews.isNotEmpty) ...[
                         const SizedBox(height: 24),
-                        const Text("Reviews", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const LText("Reviews", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 12),
                         ..._reviews.map((r) => Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -285,7 +286,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                       ),
 
                       const SizedBox(height: 24),
-                      const Text("Contact",
+                      const LText("Contact",
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 8),
                       Row(
@@ -330,8 +331,8 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Starting from", style: TextStyle(fontSize: 11, color: Colors.grey)),
-                      Text("SAR ${s.startingPrice.toStringAsFixed(2)} / ${s.priceType}",
+                      const LText("Starting from", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      LText("SAR ${s.startingPrice.toStringAsFixed(2)} / ${s.priceType}",
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ],
                   ),
@@ -348,7 +349,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                         MaterialPageRoute(builder: (_) => BookingScreen(service: s)),
                       );
                     },
-                    child: const Text("Book Service",
+                    child: const LText("Book Service",
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ],
@@ -366,14 +367,14 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
         Icon(icon, color: kPrimaryPurple, size: 22),
         const SizedBox(height: 6),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        LText(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
       ],
     );
   }
 
   Widget _badge(String text, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsetsDirectional.only(end: 8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
@@ -385,7 +386,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
           children: [
             Icon(icon, size: 13, color: kPrimaryPurple),
             const SizedBox(width: 4),
-            Text(text, style: const TextStyle(fontSize: 10)),
+            LText(text, style: const TextStyle(fontSize: 10)),
           ],
         ),
       ),
