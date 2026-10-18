@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:latlong2/latlong.dart';
@@ -138,7 +139,7 @@ class _BookingScreenState extends State<BookingScreen> {
       }
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
-      messenger.showSnackBar(const SnackBar(content: Text('Payment confirmed. Booking successful.')));
+      messenger.showSnackBar(const SnackBar(content: LText('Payment confirmed. Booking successful.')));
     } on StripeException {
       if (mounted) _showError('Payment was cancelled or could not be completed. Your booking remains pending.');
     } catch (_) {
@@ -153,12 +154,12 @@ class _BookingScreenState extends State<BookingScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Error"),
-        content: SingleChildScrollView(child: SelectableText(msg)),
+        title: const LText("Error"),
+        content: SingleChildScrollView(child: SelectableText(tr(context, msg))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+            child: const LText("OK"),
           ),
         ],
       ),
@@ -170,7 +171,7 @@ class _BookingScreenState extends State<BookingScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const Text("Book Service", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const LText("Book Service", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -204,10 +205,10 @@ class _BookingScreenState extends State<BookingScreen> {
                         Text(widget.service.title,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text("by ${widget.service.providerName}",
+                        LText("by ${widget.service.providerName}",
                             style: const TextStyle(color: Colors.grey, fontSize: 12)),
                         const SizedBox(height: 4),
-                        Text("SAR ${widget.service.startingPrice.toStringAsFixed(2)}",
+                        LText("SAR ${widget.service.startingPrice.toStringAsFixed(2)}",
                             style: const TextStyle(
                                 color: kPrimaryPurple, fontWeight: FontWeight.bold, fontSize: 14)),
                       ],
@@ -218,7 +219,7 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
 
             const SizedBox(height: 24),
-            const Text("Appointment Date", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const LText("Appointment Date", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: _pickDate,
@@ -232,7 +233,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   children: [
                     const Icon(Icons.calendar_today_outlined, color: kPrimaryPurple, size: 18),
                     const SizedBox(width: 10),
-                    Text(
+                    LText(
                       _selectedDate == null
                           ? "Select date"
                           : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}",
@@ -245,7 +246,7 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
 
             const SizedBox(height: 20),
-            const Text("Appointment Time", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const LText("Appointment Time", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: _pickTime,
@@ -259,7 +260,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   children: [
                     const Icon(Icons.access_time, color: kPrimaryPurple, size: 18),
                     const SizedBox(width: 10),
-                    Text(
+                    LText(
                       _selectedTime == null ? "Select time" : _selectedTime!.format(context),
                       style: TextStyle(
                           color: _selectedTime == null ? Colors.grey : Colors.black87, fontSize: 14),
@@ -270,7 +271,7 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
 
             const SizedBox(height: 20),
-            const Text("Service Address", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const LText("Service Address", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             _field(_addressController, "Enter full address", maxLines: 2),
             const SizedBox(height: 10),
@@ -286,7 +287,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   children: [
                     const Icon(Icons.map_outlined, color: kPrimaryPurple, size: 18),
                     const SizedBox(width: 10),
-                    Text(
+                    LText(
                       _selectedLocation == null
                           ? "Pin exact location on map"
                           : "Location selected ✓ (${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)})",
@@ -301,12 +302,12 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
 
             const SizedBox(height: 20),
-            const Text("Phone Number", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const LText("Phone Number", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             _field(_phoneController, "Your contact number", keyboardType: TextInputType.phone),
 
             const SizedBox(height: 20),
-            const Text("Additional Notes (Optional)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const LText("Additional Notes (Optional)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             _field(_notesController, "Any special instructions...", maxLines: 3),
 
@@ -324,7 +325,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     ? const SizedBox(
                         height: 20, width: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text("Continue", style: TextStyle(fontSize: 16, color: Colors.white)),
+                    : const LText("Continue", style: TextStyle(fontSize: 16, color: Colors.white)),
               ),
             ),
             const SizedBox(height: 20),
@@ -341,7 +342,7 @@ class _BookingScreenState extends State<BookingScreen> {
       maxLines: maxLines,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        hintText: hint,
+        hintText: tr(context, hint),
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
         filled: true,
         fillColor: kLightPurple,
