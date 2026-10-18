@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'api_http.dart' as http;
+import 'app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'session_manager.dart';
 
 class PaymentService {
-  static const String baseUrl = "https://servicebookingapi.onrender.com/api/Payment";
+  static String get baseUrl => AppConfig.endpoint('Payment');
 
   static Future<Map<String, dynamic>> createPaymentIntent(int bookingId) async {
     try {
@@ -17,7 +17,6 @@ class PaymentService {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      debugPrint("createPaymentIntent -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true, "data": jsonDecode(response.body)};
@@ -27,7 +26,7 @@ class PaymentService {
       }
       return {"success": false, "message": response.body};
     } catch (e) {
-      debugPrint("createPaymentIntent -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -42,14 +41,13 @@ class PaymentService {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      debugPrint("confirmPayment -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 401) {
         SessionManager.handleSessionExpired();
       }
       return response.statusCode == 200;
     } catch (e) {
-      debugPrint("confirmPayment -> exception: $e");
+
       return false;
     }
   }

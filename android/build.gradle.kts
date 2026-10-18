@@ -1,18 +1,3 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        // Add these classpath dependencies:
-        classpath("com.android.tools.build:gradle:8.3.2") // Android Gradle Plugin (AGP)  
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.21") // Kotlin version here
-        classpath("com.google.gms:google-services:4.4.2") // Google Services (Firebase)
-    }
-}
-
-
-
 plugins {
   
   id("com.google.gms.google-services") version "4.4.2" apply false

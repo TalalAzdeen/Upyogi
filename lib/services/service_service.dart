@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'api_http.dart' as http;
+import 'app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'session_manager.dart';
 
 class ServiceApiService {
-  static const String baseUrl = "https://servicebookingapi.onrender.com/api/Service";
+  static String get baseUrl => AppConfig.endpoint('Service');
 
   static Future<Map<String, dynamic>> createService({
     required String title,
@@ -77,7 +77,6 @@ class ServiceApiService {
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
 
-      debugPrint("createService -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true, "data": jsonDecode(response.body)};
@@ -88,7 +87,7 @@ class ServiceApiService {
         return {"success": false, "message": "(${response.statusCode}) ${response.body}"};
       }
     } catch (e) {
-      debugPrint("createService -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -113,7 +112,6 @@ class ServiceApiService {
       final uri = Uri.parse(baseUrl).replace(queryParameters: params);
       final response = await http.get(uri);
 
-      debugPrint("getServices -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true, "data": jsonDecode(response.body)};
@@ -121,7 +119,7 @@ class ServiceApiService {
         return {"success": false, "message": response.body};
       }
     } catch (e) {
-      debugPrint("getServices -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -136,7 +134,6 @@ class ServiceApiService {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      debugPrint("getMyServices -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true, "data": jsonDecode(response.body)};
@@ -147,7 +144,7 @@ class ServiceApiService {
         return {"success": false, "message": response.body};
       }
     } catch (e) {
-      debugPrint("getMyServices -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -156,7 +153,6 @@ class ServiceApiService {
     try {
       final response = await http.get(Uri.parse("$baseUrl/$id"));
 
-      debugPrint("getServiceById -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true, "data": jsonDecode(response.body)};
@@ -164,7 +160,7 @@ class ServiceApiService {
         return {"success": false, "message": response.body};
       }
     } catch (e) {
-      debugPrint("getServiceById -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -179,7 +175,6 @@ class ServiceApiService {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      debugPrint("deleteService -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true};
@@ -190,7 +185,7 @@ class ServiceApiService {
         return {"success": false, "message": response.body};
       }
     } catch (e) {
-      debugPrint("deleteService -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -205,14 +200,13 @@ class ServiceApiService {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      debugPrint("toggleServiceStatus -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 401) {
         SessionManager.handleSessionExpired();
       }
       return response.statusCode == 200;
     } catch (e) {
-      debugPrint("toggleServiceStatus -> exception: $e");
+
       return false;
     }
   }
@@ -236,7 +230,6 @@ class ServiceApiService {
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
 
-      debugPrint("updateService -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true};
@@ -246,7 +239,7 @@ class ServiceApiService {
       }
       return {"success": false, "message": response.body};
     } catch (e) {
-      debugPrint("updateService -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }

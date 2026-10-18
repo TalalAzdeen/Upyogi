@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import '../services/api_http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
@@ -41,7 +41,7 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
 
   Future<void> _pickImage() async {
     final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (picked != null) setState(() => _newImage = picked);
+    if (picked != null && mounted) setState(() => _newImage = picked);
   }
 
   Future<void> _save() async {
@@ -74,6 +74,7 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
         return;
       }
 
+      if (!mounted) return;
       setState(() => _isSubmitting = false);
 
       if (response.statusCode == 200) {
@@ -93,6 +94,7 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
       }
     } catch (e) {
       debugPrint("editProfile -> exception: $e");
+      if (!mounted) return;
       setState(() => _isSubmitting = false);
       _showError("Something went wrong: $e");
     }

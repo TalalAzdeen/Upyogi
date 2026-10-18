@@ -30,6 +30,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
   Future<void> _resolve() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     final token = prefs.getString("token");
     final role = prefs.getString("role");
 
@@ -42,12 +43,28 @@ class _AuthGateState extends ConsumerState<AuthGate> {
 
     if (role == "Provider") {
       final result = await ProviderService.getMyProfile();
-      if (result["sessionExpired"] == true) return;
+      if (result["sessionExpired"] == true) {
+        if (mounted) setState(() => _resolvedScreen = const RoleSelectScreen());
+        return;
+      }
       if (!mounted) return;
       setState(() {
-        _resolvedScreen = result["success"] == true
-            ? const MainShell()
-            : const ProviderProfileSetupScreen();
+        if (result['success'] == true) {
+          _resolvedScreen = const MainShell();
+        } else if (result['notFound'] == true) {
+          _resolvedScreen = const ProviderProfileSetupScreen();
+        } else {
+          _resolvedScreen = Scaffold(body: Center(child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Unable to load your profile. Check your connection.'),
+              TextButton(onPressed: () {
+                setState(() => _resolvedScreen = null);
+                _resolve();
+              }, child: const Text('Retry')),
+            ],
+          )));
+        }
       });
     } else {
       setState(() => _resolvedScreen = const MainShell());

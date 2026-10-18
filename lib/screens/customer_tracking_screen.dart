@@ -19,6 +19,7 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
   final MapController _mapController = MapController();
   LatLng? _providerLocation;
   bool _isConnecting = true;
+  String? _connectionError;
 
   @override
   void initState() {
@@ -27,17 +28,26 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
   }
 
   Future<void> _init() async {
+    if (mounted) setState(() { _isConnecting = true; _connectionError = null; });
+    try {
     await _locationService.connect();
     await _locationService.joinBookingGroup(widget.booking.id);
 
     _locationService.onLocationReceived((lat, lng) {
       if (!mounted) return;
       setState(() => _providerLocation = LatLng(lat, lng));
-      _mapController.move(LatLng(lat, lng), 15);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _mapController.move(LatLng(lat, lng), 15);
+      });
     });
 
     if (!mounted) return;
     setState(() => _isConnecting = false);
+    } catch (_) {
+      await _locationService.disconnect();
+      if (!mounted) return;
+      setState(() { _isConnecting = false; _connectionError = 'Unable to connect to live tracking.'; });
+    }
   }
 
   @override
@@ -55,7 +65,12 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
       ),
-      body: _isConnecting
+      body: _connectionError != null
+          ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(_connectionError!),
+              TextButton(onPressed: _init, child: const Text('Retry')),
+            ]))
+          : _isConnecting
           ? const Center(child: CircularProgressIndicator(color: kPrimaryPurple))
           : _providerLocation == null
               ? const Center(

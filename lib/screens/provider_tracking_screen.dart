@@ -22,6 +22,7 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
   StreamSubscription<Position>? _positionStream;
   bool _isSharing = false;
   bool _isConnecting = true;
+  String? _connectionError;
 
   @override
   void initState() {
@@ -30,10 +31,17 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
   }
 
   Future<void> _init() async {
+    if (mounted) setState(() { _isConnecting = true; _connectionError = null; });
+    try {
     await _locationService.connect();
     await _locationService.joinBookingGroup(widget.booking.id);
     if (!mounted) return;
     setState(() => _isConnecting = false);
+    } catch (_) {
+      await _locationService.disconnect();
+      if (!mounted) return;
+      setState(() { _isConnecting = false; _connectionError = 'Unable to connect to live tracking.'; });
+    }
   }
 
   Future<void> _startSharing() async {
@@ -73,12 +81,18 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
     );
 
     _positionStream = Geolocator.getPositionStream(locationSettings: settings)
-        .listen((position) {
-      _locationService.sendLocation(
-        widget.booking.id,
-        position.latitude,
-        position.longitude,
-      );
+        .listen((position) async {
+      try {
+        await _locationService.sendLocation(widget.booking.id,
+            position.latitude, position.longitude);
+      } catch (_) {
+        if (mounted) _showError('Unable to send your location. Check your connection.');
+      }
+    }, onError: (Object error) {
+      if (mounted) {
+        setState(() => _isSharing = false);
+        _showError('Location sharing stopped. Check location permission and try again.');
+      }
     });
   }
 
@@ -137,7 +151,12 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
       ),
-      body: _isConnecting
+      body: _connectionError != null
+          ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(_connectionError!),
+              TextButton(onPressed: _init, child: const Text('Retry')),
+            ]))
+          : _isConnecting
           ? const Center(child: CircularProgressIndicator(color: kPrimaryPurple))
           : Padding(
               padding: const EdgeInsets.all(20),

@@ -1,10 +1,4 @@
 import 'dart:io';
 
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
-  }
-}
+/// Uses the platform trust store; invalid TLS certificates are rejected.
+class MyHttpOverrides extends HttpOverrides {}
