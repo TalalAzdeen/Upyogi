@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/booking_model.dart';
@@ -74,7 +75,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const Text("Appointments", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const LText("Appointments", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -91,7 +92,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                 children: ["All", "Upcoming", "Completed", "Cancelled"].map((f) {
                   final selected = _filter == f;
                   return Padding(
-                    padding: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsetsDirectional.only(end: 8),
                     child: GestureDetector(
                       onTap: () => setState(() => _filter = f),
                       child: Container(
@@ -101,7 +102,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         alignment: Alignment.center,
-                        child: Text(f,
+                        child: LText(f,
                             style: TextStyle(
                                 color: selected ? Colors.white : Colors.black87,
                                 fontSize: 13,
@@ -119,7 +120,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                 ? const Center(child: CircularProgressIndicator(color: kPrimaryPurple))
                 : _filteredBookings.isEmpty
                     ? const Center(
-                        child: Text("No appointments found",
+                        child: LText("No appointments found",
                             style: TextStyle(color: Colors.grey)))
                     : RefreshIndicator(
                         onRefresh: _loadBookings,
@@ -189,7 +190,7 @@ class _BookingCard extends StatelessWidget {
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Action failed, try again")),
+          const SnackBar(content: LText("Action failed, try again")),
         );
       }
     }
@@ -223,7 +224,7 @@ class _BookingCard extends StatelessWidget {
                   color: _statusColor(booking.bookingStatus).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
+                child: LText(
                   booking.bookingStatus,
                   style: TextStyle(
                       color: _statusColor(booking.bookingStatus),
@@ -234,7 +235,7 @@ class _BookingCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
+          LText(
             isProvider ? "Customer: ${booking.customerName}" : "Provider: ${booking.providerName}",
             style: const TextStyle(color: Colors.grey, fontSize: 13),
           ),
@@ -243,7 +244,7 @@ class _BookingCard extends StatelessWidget {
             children: [
               const Icon(Icons.calendar_today_outlined, size: 14, color: kPrimaryPurple),
               const SizedBox(width: 6),
-              Text(
+              LText(
                 "${booking.appointmentDate.day}/${booking.appointmentDate.month}/${booking.appointmentDate.year} • ${booking.appointmentTime}",
                 style: const TextStyle(fontSize: 12),
               ),
@@ -274,7 +275,7 @@ class _BookingCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              LText(
                 "SAR ${booking.amount.toStringAsFixed(2)}",
                 style: const TextStyle(fontWeight: FontWeight.bold, color: kPrimaryPurple, fontSize: 14),
               ),
@@ -286,7 +287,7 @@ class _BookingCard extends StatelessWidget {
                       : Colors.orange.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text(
+                child: LText(
                   booking.paymentStatus,
                   style: TextStyle(
                       fontSize: 10,
@@ -306,7 +307,7 @@ class _BookingCard extends StatelessWidget {
                     onPressed: () => _handleAction(context, "reject"),
                     style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red, side: const BorderSide(color: Colors.red)),
-                    child: const Text("Reject"),
+                    child: const LText("Reject"),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -314,7 +315,7 @@ class _BookingCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () => _handleAction(context, "accept"),
                     style: ElevatedButton.styleFrom(backgroundColor: kPrimaryPurple),
-                    child: const Text("Accept", style: TextStyle(color: Colors.white)),
+                    child: const LText("Accept", style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],
@@ -331,7 +332,7 @@ class _BookingCard extends StatelessWidget {
                   );
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: kPrimaryPurple),
-                child: const Text("Start Service", style: TextStyle(color: Colors.white)),
+                child: const LText("Start Service", style: TextStyle(color: Colors.white)),
               ),
             ),
           ] else if (!isProvider &&
@@ -343,7 +344,7 @@ class _BookingCard extends StatelessWidget {
                 onPressed: () => _handleAction(context, "cancel"),
                 style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red, side: const BorderSide(color: Colors.red)),
-                child: const Text("Cancel Booking"),
+                child: const LText("Cancel Booking"),
               ),
             ),
             if (booking.bookingStatus == "Accepted") ...[
@@ -358,7 +359,7 @@ class _BookingCard extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.location_on, color: kPrimaryPurple),
-                  label: const Text("Track Provider", style: TextStyle(color: kPrimaryPurple)),
+                  label: const LText("Track Provider", style: TextStyle(color: kPrimaryPurple)),
                   style: OutlinedButton.styleFrom(side: const BorderSide(color: kPrimaryPurple)),
                 ),
               ),
@@ -379,7 +380,7 @@ class _BookingCard extends StatelessWidget {
                   onStatusChanged();
                 },
                 icon: const Icon(Icons.star_border, color: Colors.amber),
-                label: const Text("Rate Service", style: TextStyle(color: Colors.black87)),
+                label: const LText("Rate Service", style: TextStyle(color: Colors.black87)),
                 style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.amber)),
               ),
             ),
