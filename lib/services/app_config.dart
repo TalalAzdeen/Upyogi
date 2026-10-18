@@ -2,7 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Public client settings only. Never put server-side secrets in this file.
 class AppConfig {
-  static const defaultApiBaseUrl = 'https://servicebookingapi.onrender.com';
+  static const defaultApiBaseUrl = 'https://prsyiadiplvumfjesfdf.supabase.co/functions/v1/upyogi-api';
 
   static String _value(String key) =>
       dotenv.isInitialized ? (dotenv.env[key] ?? '').trim() : '';
@@ -30,7 +30,8 @@ class AppConfig {
   static String endpoint(String name) => '$apiBaseUrl/api/$name';
   static String get authBaseUrl => endpoint('Auth');
   static String get locationHubUrl => '$apiBaseUrl/hubs/location';
-  static String get stripePublishableKey => _value('STRIPE_PUBLISHABLE_KEY');
+  static String? serverStripePublishableKey;
+  static String get stripePublishableKey => serverStripePublishableKey ?? _value('STRIPE_PUBLISHABLE_KEY');
   static bool get paymentsEnabled => stripePublishableKey.startsWith('pk_test_') ||
       stripePublishableKey.startsWith('pk_live_');
 }
