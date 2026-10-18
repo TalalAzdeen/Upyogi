@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/role_provider.dart';
@@ -37,16 +38,16 @@ class _MainShellState extends ConsumerState<MainShell> {
           ];
 
     final List<BottomNavigationBarItem> items = isProvider
-        ? const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), activeIcon: Icon(Icons.add_circle), label: "Upload"),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_today_outlined), activeIcon: Icon(Icons.calendar_today), label: "Appointments"),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: "Profile"),
+        ? [
+            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: tr(context, "Home")),
+            BottomNavigationBarItem(icon: const Icon(Icons.add_circle_outline), activeIcon: const Icon(Icons.add_circle), label: tr(context, "Upload")),
+            BottomNavigationBarItem(icon: const Icon(Icons.calendar_today_outlined), activeIcon: const Icon(Icons.calendar_today), label: tr(context, "Appointments")),
+            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), activeIcon: const Icon(Icons.person), label: tr(context, "Profile")),
           ]
-        : const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_today_outlined), activeIcon: Icon(Icons.calendar_today), label: "Appointments"),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: "Profile"),
+        : [
+            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: tr(context, "Home")),
+            BottomNavigationBarItem(icon: const Icon(Icons.calendar_today_outlined), activeIcon: const Icon(Icons.calendar_today), label: tr(context, "Appointments")),
+            BottomNavigationBarItem(icon: const Icon(Icons.person_outline), activeIcon: const Icon(Icons.person), label: tr(context, "Profile")),
           ];
 
     // Clamp index if role changes and list is shorter
