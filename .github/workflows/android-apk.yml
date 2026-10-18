@@ -27,7 +27,9 @@ jobs:
         shell: python
         run: |
           import os
+          # Ignore the upstream Windows release keystore for this debug build.
           from pathlib import Path
+          Path('android/keystore.properties').unlink(missing_ok=True)
           values = {
               'AUTH_BASE_URL': os.environ.get('AUTH_BASE_URL') or 'https://example.invalid/api/Auth',
               'STRIPE_PUBLISHABLE_KEY': os.environ.get('STRIPE_PUBLISHABLE_KEY', ''),
