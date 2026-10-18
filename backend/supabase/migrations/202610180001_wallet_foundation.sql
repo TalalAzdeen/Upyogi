@@ -7,7 +7,10 @@ create table public.app_profiles (
   created_at timestamptz not null default now()
 );
 
-create function public.create_app_profile()
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+
+create function private.create_app_profile()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
   insert into public.app_profiles(id, full_name, role)
@@ -18,7 +21,7 @@ end;
 $$;
 
 create trigger create_app_profile_after_signup
-after insert on auth.users for each row execute function public.create_app_profile();
+after insert on auth.users for each row execute function private.create_app_profile();
 
 create table public.wallet_accounts (
   id uuid primary key default gen_random_uuid(),
@@ -65,15 +68,15 @@ alter table public.wallet_ledger enable row level security;
 alter table public.processed_payment_events enable row level security;
 
 create policy profiles_read_own on public.app_profiles for select to authenticated
-using (id = auth.uid());
+using (id = (select auth.uid()));
 create policy profiles_update_name on public.app_profiles for update to authenticated
-using (id = auth.uid()) with check (id = auth.uid());
+using (id = (select auth.uid())) with check (id = (select auth.uid()));
 create policy wallets_read_own on public.wallet_accounts for select to authenticated
-using (owner_id = auth.uid());
+using (owner_id = (select auth.uid()));
 create policy topups_read_own on public.wallet_topups for select to authenticated
-using (owner_id = auth.uid());
+using (owner_id = (select auth.uid()));
 create policy ledger_read_own on public.wallet_ledger for select to authenticated
-using (exists(select 1 from public.wallet_accounts w where w.id = wallet_id and w.owner_id = auth.uid()));
+using (exists(select 1 from public.wallet_accounts w where w.id = wallet_id and w.owner_id = (select auth.uid())));
 
 revoke all on public.app_profiles, public.wallet_accounts, public.wallet_topups,
   public.wallet_ledger, public.processed_payment_events from anon, authenticated;
@@ -90,7 +93,7 @@ create function public.credit_verified_topup(
   p_payment_intent_id text,
   p_amount_minor bigint,
   p_currency text
-) returns bigint language plpgsql security definer set search_path = public as $$
+) returns bigint language plpgsql security invoker set search_path = public as $$
 declare
   topup public.wallet_topups%rowtype;
   resulting_balance bigint;
@@ -121,8 +124,11 @@ begin
 end;
 $$;
 
-revoke all on function public.create_app_profile() from public, anon, authenticated;
+revoke all on function private.create_app_profile() from public, anon, authenticated;
 revoke all on function public.credit_verified_topup(text, text, bigint, text) from public, anon, authenticated;
 grant execute on function public.credit_verified_topup(text, text, bigint, text) to service_role;
 
+create index wallet_topups_owner_idx on public.wallet_topups(owner_id, created_at desc);
+create index wallet_topups_wallet_idx on public.wallet_topups(wallet_id, owner_id, currency);
+create index wallet_ledger_wallet_idx on public.wallet_ledger(wallet_id, created_at desc);
 commit;
