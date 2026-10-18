@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -56,7 +57,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Select Service Location"),
+        title: const LText("Select Service Location"),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
       ),
@@ -127,7 +128,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   onPressed: () {
                     Navigator.pop(context, _selectedLocation);
                   },
-                  child: const Text("Confirm Location",
+                  child: const LText("Confirm Location",
                       style: TextStyle(color: Colors.white, fontSize: 16)),
                 ),
               ),
