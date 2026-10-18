@@ -67,7 +67,7 @@ class _EditUserProfileScreenState extends State<EditUserProfileScreen> {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      debugPrint("editProfile -> status: ${response.statusCode}, body: ${response.body}");
+
 
       if (response.statusCode == 401) {
         SessionManager.handleSessionExpired();
