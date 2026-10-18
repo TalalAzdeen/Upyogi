@@ -29,8 +29,8 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
   final _priceToController = TextEditingController();
   final _radiusController = TextEditingController();
   final _addressController = TextEditingController();
-  final _startTimeController = TextEditingController(text: tr(context, "09:00"));
-  final _endTimeController = TextEditingController(text: tr(context, "18:00"));
+  final _startTimeController = TextEditingController(text: "09:00");
+  final _endTimeController = TextEditingController(text: "18:00");
 
   String? _selectedCategory;
   final List<String> _categories = [
