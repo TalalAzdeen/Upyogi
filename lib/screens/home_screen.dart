@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -6,9 +7,9 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Home")),
+      appBar: AppBar(title: const LText("Home")),
       body: const Center(
-        child: Text(
+        child: LText(
           "Login successful! 🎉\nHome screen coming next.",
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 18),
