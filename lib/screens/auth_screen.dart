@@ -305,7 +305,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           );
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Registered successfully! Please login.")),
+          const SnackBar(content: Text("تم استلام التسجيل. أكّد بريدك الإلكتروني ثم سجّل الدخول.")),
         );
         setState(() => _isLogin = true);
       }
