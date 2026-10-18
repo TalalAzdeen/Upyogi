@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'api_http.dart' as http;
+import 'app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'session_manager.dart';
 
 class ReviewService {
-  static const String baseUrl = "https://servicebookingapi.onrender.com/api/Review";
+  static String get baseUrl => AppConfig.endpoint('Review');
 
   static Future<Map<String, String>> _headers() async {
     final prefs = await SharedPreferences.getInstance();
@@ -32,7 +32,6 @@ class ReviewService {
         }),
       );
 
-      debugPrint("submitReview -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true};
@@ -42,7 +41,7 @@ class ReviewService {
       }
       return {"success": false, "message": response.body};
     } catch (e) {
-      debugPrint("submitReview -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -51,14 +50,13 @@ class ReviewService {
     try {
       final response = await http.get(Uri.parse("$baseUrl/service/$serviceId"));
 
-      debugPrint("getServiceReviews -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
       return [];
     } catch (e) {
-      debugPrint("getServiceReviews -> exception: $e");
+
       return [];
     }
   }
@@ -70,14 +68,13 @@ class ReviewService {
         headers: await _headers(),
       );
 
-      debugPrint("hasReviewed -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 401) {
         SessionManager.handleSessionExpired();
       }
       return response.statusCode == 200;
     } catch (e) {
-      debugPrint("hasReviewed -> exception: $e");
+
       return false;
     }
   }
