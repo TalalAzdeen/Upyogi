@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
 import '../services/wallet_service.dart';
@@ -32,7 +33,7 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   void _message(String text) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: LText(text)));
   }
 
   Future<void> _topup() async {
@@ -80,30 +81,30 @@ class _WalletScreenState extends State<WalletScreen> {
   @override
   Widget build(BuildContext context) {
     final entries = (_wallet?['topups'] as List?) ?? [];
-    return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
-      appBar: AppBar(title: const Text('محفظتي'), actions: [IconButton(onPressed: _paying ? null : _load, icon: const Icon(Icons.refresh), tooltip: 'تحديث الرصيد')]),
+    return Directionality(textDirection: Directionality.of(context), child: Scaffold(
+      appBar: AppBar(title: const LText('محفظتي'), actions: [IconButton(onPressed: _paying ? null : _load, icon: const Icon(Icons.refresh), tooltip: tr(context, 'تحديث الرصيد'))]),
       body: _loading ? const Center(child: CircularProgressIndicator()) : RefreshIndicator(
         onRefresh: _load,
         child: ListView(padding: const EdgeInsets.all(24), children: [
           if (_error != null) ...[
-            Text(_error!, style: const TextStyle(color: Colors.red)),
-            TextButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+            LText(_error!, style: const TextStyle(color: Colors.red)),
+            TextButton(onPressed: _load, child: const LText('إعادة المحاولة')),
           ],
           if (_wallet != null) ...[
-            const Text('الرصيد المتاح', style: TextStyle(fontSize: 18)),
-            Text('${((_wallet!['balanceMinor'] as num) / 100).toStringAsFixed(2)} ر.س', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
+            const LText('الرصيد المتاح', style: TextStyle(fontSize: 18)),
+            LText('${((_wallet!['balanceMinor'] as num) / 100).toStringAsFixed(2)} ر.س', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
-            if (_wallet!['paymentsConfigured'] != true) const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('الشحن غير مفعّل بعد. يلزم إكمال إعداد بوابة الدفع قبل قبول الأموال.'))),
-            TextField(controller: _amount, enabled: !_paying, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'مبلغ الشحن بالريال السعودي', hintText: '10.00', border: OutlineInputBorder())),
+            if (_wallet!['paymentsConfigured'] != true) const Card(child: Padding(padding: EdgeInsets.all(16), child: LText('الشحن غير مفعّل بعد. يلزم إكمال إعداد بوابة الدفع قبل قبول الأموال.'))),
+            TextField(controller: _amount, enabled: !_paying, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: tr(context, 'مبلغ الشحن بالريال السعودي'), hintText: tr(context, '10.00'), border: OutlineInputBorder())),
             const SizedBox(height: 12),
             FilledButton.icon(onPressed: _paying || _error != null || _wallet!['paymentsConfigured'] != true ? null : _topup,
-              icon: _paying ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.add_card), label: Text(_paying ? 'جارٍ معالجة الدفع…' : 'شحن الرصيد')),
-            const SizedBox(height: 24), const Text('عمليات الشحن', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            if (entries.isEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Text('لا توجد عمليات شحن حتى الآن.')),
+              icon: _paying ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.add_card), label: LText(_paying ? 'جارٍ معالجة الدفع…' : 'شحن الرصيد')),
+            const SizedBox(height: 24), const LText('عمليات الشحن', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            if (entries.isEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: LText('لا توجد عمليات شحن حتى الآن.')),
             for (final e in entries) ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.account_balance_wallet_outlined),
-              title: Text('${((e['amount_minor'] as num) / 100).toStringAsFixed(2)} ر.س'),
+              title: LText('${((e['amount_minor'] as num) / 100).toStringAsFixed(2)} ر.س'),
               subtitle: Text(e['created_at'].toString().split('T').first),
-              trailing: Text(({'pending':'بانتظار التأكيد','succeeded':'مكتملة','cancelled':'ملغاة','failed':'فشلت'})[e['status']] ?? 'قيد المعالجة')),
+              trailing: LText(({'pending':'بانتظار التأكيد','succeeded':'مكتملة','cancelled':'ملغاة','failed':'فشلت'})[e['status']] ?? 'قيد المعالجة')),
           ],
         ]),
       ),
