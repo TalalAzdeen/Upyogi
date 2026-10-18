@@ -14,7 +14,9 @@ class SessionManager {
     _handling = true;
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
+      for (final key in ['token', 'role', 'fullName', 'profileImageUrl']) {
+        await prefs.remove(key);
+      }
 
       final nav = navigatorKey.currentState;
       if (nav == null) return;
