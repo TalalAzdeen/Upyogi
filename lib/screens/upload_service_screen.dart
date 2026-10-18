@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,8 +28,8 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
   final _cityController = TextEditingController();
   final _addressController = TextEditingController();
   final _pincodeController = TextEditingController();
-  final _startTimeController = TextEditingController(text: "09:00");
-  final _endTimeController = TextEditingController(text: "18:00");
+  final _startTimeController = TextEditingController(text: tr(context, "09:00"));
+  final _endTimeController = TextEditingController(text: tr(context, "18:00"));
   final _providerNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
@@ -66,12 +67,12 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
             const SizedBox(height: 12),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: kPrimaryPurple),
-              title: const Text("Take Photo"),
+              title: const LText("Take Photo"),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library, color: kPrimaryPurple),
-              title: const Text("Choose from Gallery"),
+              title: const LText("Choose from Gallery"),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
             const SizedBox(height: 8),
@@ -133,7 +134,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
     if (result["success"] == true) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Service uploaded successfully!")),
+          const SnackBar(content: LText("Service uploaded successfully!")),
         );
         _clearForm();
       }
@@ -175,12 +176,12 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Error"),
-        content: SingleChildScrollView(child: SelectableText(msg)),
+        title: const LText("Error"),
+        content: SingleChildScrollView(child: SelectableText(tr(context, msg))),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+            child: const LText("OK"),
           ),
         ],
       ),
@@ -192,7 +193,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const Text("Upload Service", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const LText("Upload Service", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -223,7 +224,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
                           children: [
                             Icon(Icons.add_a_photo, color: kPrimaryPurple, size: 32),
                             SizedBox(height: 8),
-                            Text("Add Service Image", style: TextStyle(color: Colors.grey)),
+                            LText("Add Service Image", style: TextStyle(color: Colors.grey)),
                           ],
                         ),
                       )
@@ -247,7 +248,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
                       color: selected ? kPrimaryPurple : kLightPurple,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(cat,
+                    child: LText(cat,
                         style: TextStyle(
                             color: selected ? Colors.white : Colors.black87, fontSize: 12)),
                   ),
@@ -270,9 +271,9 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
               children: ["Fixed", "Hourly", "Daily"].map((type) {
                 final selected = _priceType == type;
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsetsDirectional.only(end: 8),
                   child: ChoiceChip(
-                    label: Text(type),
+                    label: LText(type),
                     selected: selected,
                     selectedColor: kPrimaryPurple,
                     labelStyle: TextStyle(color: selected ? Colors.white : Colors.black87),
@@ -305,7 +306,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
                   child: CircleAvatar(
                     radius: 20,
                     backgroundColor: selected ? kPrimaryPurple : kLightPurple,
-                    child: Text(day.substring(0, 2),
+                    child: LText(day,
                         style: TextStyle(
                             fontSize: 11, color: selected ? Colors.white : Colors.black87)),
                   ),
@@ -344,21 +345,21 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text("Emergency Service", style: TextStyle(fontSize: 14)),
+              title: const LText("Emergency Service", style: TextStyle(fontSize: 14)),
               value: _emergencyService,
               activeThumbColor: kPrimaryPurple,
               onChanged: (v) => setState(() => _emergencyService = v),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text("Home Visit Available", style: TextStyle(fontSize: 14)),
+              title: const LText("Home Visit Available", style: TextStyle(fontSize: 14)),
               value: _homeVisitAvailable,
               activeThumbColor: kPrimaryPurple,
               onChanged: (v) => setState(() => _homeVisitAvailable = v),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text("Materials Included", style: TextStyle(fontSize: 14)),
+              title: const LText("Materials Included", style: TextStyle(fontSize: 14)),
               value: _materialsIncluded,
               activeThumbColor: kPrimaryPurple,
               onChanged: (v) => setState(() => _materialsIncluded = v),
@@ -378,7 +379,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
                     ? const SizedBox(
                         height: 20, width: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text("Upload Service",
+                    : const LText("Upload Service",
                         style: TextStyle(fontSize: 16, color: Colors.white)),
               ),
             ),
@@ -391,12 +392,12 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
 
   Widget _sectionHeader(String text) => Padding(
         padding: const EdgeInsets.only(bottom: 12),
-        child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        child: LText(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       );
 
   Widget _label(String text) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        child: LText(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
       );
 
   Widget _field(TextEditingController controller, String hint,
@@ -406,7 +407,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
       maxLines: maxLines,
       keyboardType: keyboardType,
       decoration: InputDecoration(
-        hintText: hint,
+        hintText: tr(context, hint),
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
         filled: true,
         fillColor: kLightPurple,
