@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'api_http.dart' as http;
+import 'app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'session_manager.dart';
 
 class ProviderService {
-  static const String baseUrl = "https://servicebookingapi.onrender.com/api/Provider";
+  static String get baseUrl => AppConfig.endpoint('Provider');
 
   static Future<Map<String, dynamic>> saveProfile({
     required String bio,
@@ -26,7 +26,7 @@ class ProviderService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString("token");
-      debugPrint("saveProfile -> token present: ${token != null && token.isNotEmpty}, length: ${token?.length}");
+
 
       var request = http.MultipartRequest("POST", Uri.parse("$baseUrl/profile"));
       request.headers["Authorization"] = "Bearer $token";
@@ -54,7 +54,6 @@ class ProviderService {
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
 
-      debugPrint("saveProfile -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true, "data": jsonDecode(response.body)};
@@ -65,7 +64,7 @@ class ProviderService {
         return {"success": false, "message": "(${response.statusCode}) ${response.body}"};
       }
     } catch (e) {
-      debugPrint("saveProfile -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -80,7 +79,6 @@ class ProviderService {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      debugPrint("getMyProfile -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true, "data": jsonDecode(response.body)};
@@ -88,10 +86,10 @@ class ProviderService {
         SessionManager.handleSessionExpired();
         return {"success": false, "sessionExpired": true, "message": "Session expired"};
       } else {
-        return {"success": false, "message": "No profile found"};
+        return {"success": false, "notFound": response.statusCode == 404, "message": "Unable to load provider profile"};
       }
     } catch (e) {
-      debugPrint("getMyProfile -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
