@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+import 'services/api_http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +17,21 @@ void main() async {
     Stripe.publishableKey = stripeKey;
   }
   runApp(const ProviderScope(child: MyApp()));
+  unawaited(_loadPaymentSettings());
+}
+
+Future<void> _loadPaymentSettings() async {
+  try {
+    final response = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/health')).timeout(const Duration(seconds: 5));
+    if (response.statusCode != 200) return;
+    final data = jsonDecode(response.body);
+    final key = data['publishableKey'];
+    if (data['paymentsConfigured'] == true && key is String && (key.startsWith('pk_test_') || key.startsWith('pk_live_'))) {
+      AppConfig.serverStripePublishableKey = key;
+      Stripe.publishableKey = key;
+      await Stripe.instance.applySettings();
+    }
+  } catch (_) { /* Payment stays disabled until configuration is available. */ }
 }
 
 class MyApp extends StatelessWidget {
