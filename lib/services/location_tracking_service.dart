@@ -29,7 +29,11 @@ class LocationTrackingService {
   }
 
   Future<void> leaveBookingGroup(int bookingId) async {
-    await _hubConnection?.invoke("LeaveBookingGroup", args: [bookingId]);
+    try {
+      await _hubConnection?.invoke("LeaveBookingGroup", args: [bookingId]);
+    } catch (_) {
+      // Leaving a screen must remain safe if the connection already closed.
+    }
   }
 
   Future<void> sendLocation(int bookingId, double lat, double lng) async {
@@ -38,7 +42,8 @@ class LocationTrackingService {
 
   void onLocationReceived(Function(double lat, double lng) callback) {
     _hubConnection?.on("ReceiveLocation", (arguments) {
-      if (arguments != null && arguments.length >= 2) {
+      if (arguments != null && arguments.length >= 2 &&
+          arguments[0] is num && arguments[1] is num) {
         final lat = (arguments[0] as num).toDouble();
         final lng = (arguments[1] as num).toDouble();
         callback(lat, lng);
