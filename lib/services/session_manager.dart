@@ -14,7 +14,7 @@ class SessionManager {
     _handling = true;
     try {
       final prefs = await SharedPreferences.getInstance();
-      for (final key in ['token', 'role', 'fullName', 'profileImageUrl']) {
+      for (final key in ['token', 'refreshToken', 'expiresAt', 'role', 'fullName', 'profileImageUrl']) {
         await prefs.remove(key);
       }
 
