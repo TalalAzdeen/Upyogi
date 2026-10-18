@@ -263,7 +263,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
 
             const SizedBox(height: 24),
             _sectionHeader("Pricing"),
-            _field(_priceController, "Starting Price (₹)", keyboardType: TextInputType.number),
+            _field(_priceController, "Starting Price (SAR )", keyboardType: TextInputType.number),
             const SizedBox(height: 12),
             _label("Price Type"),
             Row(
