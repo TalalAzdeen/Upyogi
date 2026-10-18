@@ -18,8 +18,8 @@ void main() {
     });
     await tester.pumpWidget(const MaterialApp(home: WalletScreen()));
     await tester.pumpAndSettle();
-    expect(find.text('12.50 ر.س'), findsOneWidget);
-    expect(find.textContaining('الشحن غير مفعّل'), findsOneWidget);
+    expect(find.text('SAR 12.50'), findsOneWidget);
+    expect(find.textContaining('Top-ups are not enabled'), findsOneWidget);
     final button=tester.widget<FilledButton>(find.byWidgetPredicate((w) => w is FilledButton));
     expect(button.onPressed,isNull);
     expect(tester.takeException(),isNull);
@@ -32,11 +32,11 @@ void main() {
       : http.Response('{"balanceMinor":2500,"currency":"sar","topups":[],"paymentsConfigured":false}',200));
     await tester.pumpWidget(const MaterialApp(home: WalletScreen()));
     await tester.pumpAndSettle();
-    expect(find.text('0.00 ر.س'), findsNothing);
-    expect(find.textContaining('تعذر تحديث الرصيد'), findsOneWidget);
-    await tester.tap(find.text('إعادة المحاولة'));
+    expect(find.text('SAR 0.00'), findsNothing);
+    expect(find.textContaining('Could not refresh the balance'), findsOneWidget);
+    await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
-    expect(find.text('25.00 ر.س'),findsOneWidget);
+    expect(find.text('SAR 25.00'),findsOneWidget);
     expect(tester.takeException(),isNull);
   });
 }
