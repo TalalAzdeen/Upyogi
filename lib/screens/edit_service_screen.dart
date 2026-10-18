@@ -1,3 +1,4 @@
+import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import '../models/service_model.dart';
 import '../services/service_service.dart';
@@ -45,13 +46,13 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Service updated successfully")),
+          const SnackBar(content: LText("Service updated successfully")),
         );
       }
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result["message"]?.toString() ?? "Update failed")),
+          SnackBar(content: LText(result["message"]?.toString() ?? "Update failed")),
         );
       }
     }
@@ -62,7 +63,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const Text("Edit Service", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const LText("Edit Service", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
       ),
@@ -71,15 +72,15 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Title", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const LText("Title", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             _field(_titleController),
             const SizedBox(height: 20),
-            const Text("Starting Price", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const LText("Starting Price", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             _field(_priceController, keyboardType: TextInputType.number),
             const SizedBox(height: 20),
-            const Text("Short Description", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const LText("Short Description", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             _field(_descController, maxLines: 3),
             const SizedBox(height: 30),
@@ -96,7 +97,7 @@ class _EditServiceScreenState extends State<EditServiceScreen> {
                     ? const SizedBox(
                         height: 20, width: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text("Save Changes", style: TextStyle(color: Colors.white)),
+                    : const LText("Save Changes", style: TextStyle(color: Colors.white)),
               ),
             ),
           ],
