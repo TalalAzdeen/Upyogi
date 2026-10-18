@@ -275,7 +275,7 @@ class _BookingCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "₹${booking.amount.toStringAsFixed(0)}",
+                "SAR ${booking.amount.toStringAsFixed(2)}",
                 style: const TextStyle(fontWeight: FontWeight.bold, color: kPrimaryPurple, fontSize: 14),
               ),
               Container(
