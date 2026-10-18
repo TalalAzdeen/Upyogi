@@ -28,8 +28,8 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
   final _cityController = TextEditingController();
   final _addressController = TextEditingController();
   final _pincodeController = TextEditingController();
-  final _startTimeController = TextEditingController(text: tr(context, "09:00"));
-  final _endTimeController = TextEditingController(text: tr(context, "18:00"));
+  final _startTimeController = TextEditingController(text: "09:00");
+  final _endTimeController = TextEditingController(text: "18:00");
   final _providerNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
