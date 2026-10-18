@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'api_http.dart' as http;
+import 'app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'session_manager.dart';
 
 class BookingService {
-  static const String baseUrl = "https://servicebookingapi.onrender.com/api/Booking";
+  static String get baseUrl => AppConfig.endpoint('Booking');
 
   static Future<Map<String, String>> _headers() async {
     final prefs = await SharedPreferences.getInstance();
@@ -42,7 +42,6 @@ class BookingService {
         }),
       );
 
-      debugPrint("createBooking -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true, "data": jsonDecode(response.body)};
@@ -53,7 +52,7 @@ class BookingService {
         return {"success": false, "message": "(${response.statusCode}) ${response.body}"};
       }
     } catch (e) {
-      debugPrint("createBooking -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -62,7 +61,6 @@ class BookingService {
     try {
       final response = await http.get(Uri.parse("$baseUrl/customer"), headers: await _headers());
 
-      debugPrint("getCustomerBookings -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true, "data": jsonDecode(response.body)};
@@ -72,7 +70,7 @@ class BookingService {
       }
       return {"success": false, "message": response.body};
     } catch (e) {
-      debugPrint("getCustomerBookings -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -81,7 +79,6 @@ class BookingService {
     try {
       final response = await http.get(Uri.parse("$baseUrl/provider"), headers: await _headers());
 
-      debugPrint("getProviderBookings -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 200) {
         return {"success": true, "data": jsonDecode(response.body)};
@@ -91,7 +88,7 @@ class BookingService {
       }
       return {"success": false, "message": response.body};
     } catch (e) {
-      debugPrint("getProviderBookings -> exception: $e");
+
       return {"success": false, "message": "Error: $e"};
     }
   }
@@ -103,14 +100,13 @@ class BookingService {
         headers: await _headers(),
       );
 
-      debugPrint("$action booking $id -> status: ${response.statusCode}, body: ${response.body}");
 
       if (response.statusCode == 401) {
         SessionManager.handleSessionExpired();
       }
       return response.statusCode == 200;
     } catch (e) {
-      debugPrint("$action booking $id -> exception: $e");
+
       return false;
     }
   }
