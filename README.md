@@ -1,4 +1,4 @@
-> [دليل الإصدار 1.2.0 والإعداد والتشغيل بالعربية](README_AR.md)
+> [دليل الإصدار 1.3.0 والإعداد والتشغيل بالعربية](README_AR.md)
 
 <p align="center">
   <img src="assets/Screenshot%202026-08-17%20020605.png" alt="Upyogi on Google Play" width="800"/>
