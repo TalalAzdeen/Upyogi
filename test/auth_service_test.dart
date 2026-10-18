@@ -23,7 +23,7 @@ void main() {
 
   test('Login uses the verified endpoint, preserves password spaces and role', () async {
     api.client = MockClient((request) async {
-      expect(request.url.path, '/api/Auth/login');
+      expect(request.url.toString(), 'https://prsyiadiplvumfjesfdf.supabase.co/functions/v1/upyogi-api/api/Auth/login');
       expect(jsonDecode(request.body)['password'], ' password ');
       return http.Response(jsonEncode({'token': 'test-session', 'user': {
         'role': 'Provider', 'fullName': 'Test Provider'}}), 200);
