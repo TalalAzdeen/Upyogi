@@ -55,8 +55,8 @@ class NotificationService {
       if (response.statusCode == 401) {
         SessionManager.handleSessionExpired();
       }
-    } catch (e) {
-
+    } catch (_) {
+      // Keep the notification available for a later read-status retry.
     }
   }
 
@@ -67,8 +67,8 @@ class NotificationService {
       if (response.statusCode == 401) {
         SessionManager.handleSessionExpired();
       }
-    } catch (e) {
-
+    } catch (_) {
+      // Keep the notification available for a later read-status retry.
     }
   }
 }
