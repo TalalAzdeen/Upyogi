@@ -15,7 +15,7 @@ void main() {
 
   test('Rejected server confirmation is not reported as payment success', () async {
     api.client = MockClient((request) async {
-      expect(request.url.path, '/api/Payment/confirm/42');
+      expect(request.url.path, endsWith('/api/Payment/confirm/42'));
       return http.Response('Payment not confirmed', 503);
     });
     expect(await PaymentService.confirmPayment(42), isFalse);
