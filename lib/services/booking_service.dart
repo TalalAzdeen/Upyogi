@@ -111,6 +111,12 @@ class BookingService {
     }
   }
 
+  static Future<bool> startTravel(int id, double latitude, double longitude) async {
+    final response = await http.put(Uri.parse('$baseUrl/$id/start-travel'),
+      headers: await _headers(), body: jsonEncode({'latitude':latitude,'longitude':longitude}));
+    return response.statusCode == 200;
+  }
+
   static Future<bool> acceptBooking(int id) => _updateStatus(id, "accept");
   static Future<bool> rejectBooking(int id) => _updateStatus(id, "reject");
   static Future<bool> completeBooking(int id) => _updateStatus(id, "complete");
