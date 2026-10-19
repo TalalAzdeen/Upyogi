@@ -26,9 +26,9 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     final List<Widget> screens = isProvider
         ? const [
-            HomeFeedScreen(),
-            UploadServiceScreen(),
             AppointmentsScreen(),
+            UploadServiceScreen(),
+            HomeFeedScreen(),
             ProfileScreen(),
           ]
         : const [
@@ -39,9 +39,9 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     final List<BottomNavigationBarItem> items = isProvider
         ? [
-            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: tr(context, "Home")),
+            BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: tr(context, "Service Requests")),
             BottomNavigationBarItem(icon: const Icon(Icons.add_circle_outline), activeIcon: const Icon(Icons.add_circle), label: tr(context, "Upload")),
-            BottomNavigationBarItem(icon: const Icon(Icons.calendar_today_outlined), activeIcon: const Icon(Icons.calendar_today), label: tr(context, "Appointments")),
+            BottomNavigationBarItem(icon: const Icon(Icons.calendar_today_outlined), activeIcon: const Icon(Icons.calendar_today), label: tr(context, "Home")),
             BottomNavigationBarItem(icon: const Icon(Icons.person_outline), activeIcon: const Icon(Icons.person), label: tr(context, "Profile")),
           ]
         : [
