@@ -70,7 +70,7 @@ async function webhook(req: Request) {
   return reply({received:true});
 }
 const serviceView = (s: any) => ({ ...s.data, id:s.id, isActive:s.is_active });
-const bookingView = (b: any) => ({ ...b.data, id:b.id, serviceId:b.service_id, amount:b.amount_minor/100, bookingStatus:b.booking_status, paymentStatus:b.payment_status });
+const bookingView = (b: any) => ({ ...b.data, id:b.id, serviceId:b.service_id, amount:b.amount_minor/100, bookingStatus:b.booking_status, paymentStatus:b.payment_status==='Pending' && !b.stripe_payment_intent_id ? 'External' : b.payment_status });
 const reviewView = (r: any) => ({id:r.id,customerName:r.customer_name,rating:r.rating,comment:r.comment,createdAt:r.created_at});
 
 Deno.serve(async req => {
@@ -79,7 +79,7 @@ Deno.serve(async req => {
     const parsed = new URL(req.url);
     const path = parsed.pathname.replace(/^.*\/upyogi-api\/?/, '/').replace(/\/$/, '') || '/';
     const method = req.method;
-    if (path === '/health') return reply({status:'ok',currency:'sar',publishableKey:Deno.env.get('STRIPE_PUBLISHABLE_KEY') || null,paymentsConfigured:!!Deno.env.get('STRIPE_SECRET_KEY') && !!Deno.env.get('STRIPE_WEBHOOK_SECRET') && !!Deno.env.get('STRIPE_PUBLISHABLE_KEY')});
+    if (path === '/health') return reply({status:'ok',currency:'sar',paymentMode:'external_after_completion',publishableKey:null,paymentsConfigured:false});
     if (path === '/stripe-webhook' && method === 'POST') return await webhook(req);
     if (path === '/api/Auth/register' && method === 'POST') {
       const b = await input(req);
@@ -115,7 +115,7 @@ Deno.serve(async req => {
     const isProvider = profile?.role === 'Provider';
     const requireProvider = () => { if (!isProvider) fail(403, 'هذا الإجراء لمقدم الخدمة.'); };
     if (path === '/api/Auth/logout' && method === 'POST') {
-      const r = await fetch(`${url}/auth/v1/logout?scope=global`, {method:'POST',headers:{apikey:anon,Authorization:`Bearer ${token}`}});
+      const r = await fetch(`${url}/auth/v1/logout?scope=local`, {method:'POST',headers:{apikey:anon,Authorization:`Bearer ${token}`}});
       if (!r.ok) fail(502,'تعذر إنهاء الجلسة على الخادم.'); return reply({success:true});
     }
     if (path === '/api/Auth/password' && method === 'PUT') {
@@ -126,15 +126,29 @@ Deno.serve(async req => {
     if (/^\/api\/Location\/\d+$/.test(path) && ['GET','PUT'].includes(method)) {
       const id=Number(path.split('/')[3]); const b=await one('bookings','id',id);
       if (!b || ![b.customer_id,b.provider_id].includes(user.id)) fail(404,'الحجز غير موجود.');
-      if (b.booking_status!=='Accepted') fail(409,'التتبع متاح أثناء الحجز المقبول فقط.');
+      if (!['Accepted','OnTheWay'].includes(b.booking_status)) fail(409,'التتبع متاح أثناء الحجز المقبول فقط.');
       if (method==='GET') {
         const loc=await one('booking_locations','booking_id',id); return reply(loc ? {latitude:loc.latitude,longitude:loc.longitude,updatedAt:loc.updated_at}:null);
       }
       if (b.provider_id!==user.id) fail(403,'مقدم الخدمة فقط يستطيع إرسال الموقع.');
+      if (b.booking_status!=='OnTheWay') fail(409,'ابدأ التحرك قبل إرسال الموقع.');
       const loc=await input(req);
       if (!Number.isFinite(loc.latitude) || !Number.isFinite(loc.longitude) || Math.abs(loc.latitude)>90 || Math.abs(loc.longitude)>180) fail(400,'موقع غير صحيح.');
       checked(await admin.from('booking_locations').upsert({booking_id:id,latitude:loc.latitude,longitude:loc.longitude,updated_at:new Date().toISOString()})); return reply({success:true});
     }
+    if (/^\/api\/Booking\/\d+\/start-travel$/.test(path) && method==='PUT') {
+      const id=Number(path.split('/')[3]); const b=await one('bookings','id',id);
+      if (!b || b.provider_id!==user.id) fail(404,'الحجز غير موجود.');
+      if (!['Accepted','OnTheWay'].includes(b.booking_status)) fail(409,'تغيرت حالة الحجز.');
+      const loc=await input(req);
+      if (!Number.isFinite(loc.latitude) || !Number.isFinite(loc.longitude) || Math.abs(loc.latitude)>90 || Math.abs(loc.longitude)>180) fail(400,'موقع غير صحيح.');
+      const rows=checked(await admin.from('bookings').update({booking_status:'OnTheWay'}).eq('id',id).eq('booking_status',b.booking_status).select());
+      if (!rows.length) fail(409,'تغيرت حالة الحجز.');
+      checked(await admin.from('booking_locations').upsert({booking_id:id,latitude:loc.latitude,longitude:loc.longitude,updated_at:new Date().toISOString()}));
+      if (b.booking_status==='Accepted') checked(await admin.from('notifications').insert({owner_id:b.customer_id,title:'الفني في الطريق',message:'بدأ الفني التحرك. يمكنك متابعة موقعه على الخريطة.',related_id:id}));
+      return reply({success:true});
+    }
+    if ((path==='/api/Wallet/topup' || path.startsWith('/api/Payment/')) && method==='POST') fail(410,'الدفع يكون مباشرة مع الفني بعد انتهاء العمل، خارج التطبيق.');
     if (path === '/api/Auth/me') return reply({id:user.id,email:user.email,role:profile.role,fullName:profile.full_name,profileImageUrl:profile.profile_image_url});
     if (path === '/api/Auth/edit-profile' && method === 'PUT') {
       const b = await input(req); const updates:Record<string,unknown> = {};
@@ -174,17 +188,17 @@ Deno.serve(async req => {
       if (!s?.is_active || s.owner_id===user.id) fail(400,'الخدمة غير متاحة للحجز.');
       if (!b.appointmentDate || !Number.isFinite(Date.parse(b.appointmentDate)) || Date.parse(b.appointmentDate)<Date.now() || !text(b.appointmentTime) || !text(b.serviceAddress)) fail(400,'حدد موعدًا قادمًا وعنوان الخدمة.');
       const data={appointmentDate:b.appointmentDate,appointmentTime:text(b.appointmentTime,30),serviceAddress:text(b.serviceAddress,500),notes:text(b.notes),customerPhone:text(b.customerPhone,30),customerName:profile.full_name,providerName:s.data.providerName,serviceTitle:s.data.title,latitude:b.latitude,longitude:b.longitude};
-      const booking=checked(await admin.from('bookings').insert({service_id:s.id,customer_id:user.id,provider_id:s.owner_id,amount_minor:Math.round(s.data.startingPrice*100),data}).select().single());
+      const booking=checked(await admin.from('bookings').insert({service_id:s.id,customer_id:user.id,provider_id:s.owner_id,amount_minor:Math.round(s.data.startingPrice*100),payment_status:'External',data}).select().single());
       checked(await admin.from('notifications').insert({owner_id:s.owner_id,title:'حجز جديد',message:`طلب خدمة ${s.data.title}`,related_id:booking.id})); return reply(bookingView(booking));
     }
     if (['/api/Booking/customer','/api/Booking/provider'].includes(path) && method==='GET') return reply(checked(await admin.from('bookings').select('*').eq(path.endsWith('provider')?'provider_id':'customer_id',user.id).order('created_at',{ascending:false})).map(bookingView));
     if (/^\/api\/Booking\/\d+\/(accept|reject|complete|cancel)$/.test(path) && method==='PUT') {
       const id=Number(path.split('/')[3]); const action=path.split('/')[4]; const b=await one('bookings','id',id);
       if (!b || (action==='cancel' ? b.customer_id!==user.id : b.provider_id!==user.id)) fail(404,'الحجز غير موجود.');
-      const expected=action==='complete'?'Accepted':'Requested';
+      const expected=action==='complete' && ['Accepted','OnTheWay'].includes(b.booking_status)?b.booking_status:'Requested';
+      if (action==='complete' && !['Accepted','OnTheWay'].includes(b.booking_status)) fail(409,'تغيرت حالة الحجز.');
       if (action==='cancel' && (b.payment_status==='Paid' || b.stripe_payment_intent_id)) fail(409,'تواصل مع الدعم لاسترداد حجز مدفوع.');
       if (b.booking_status!==expected) fail(409,'تغيرت حالة الحجز. أعد تحميل الصفحة.');
-      if (action==='complete' && b.payment_status!=='Paid') fail(409,'لم يُؤكّد الدفع.');
       const next=({accept:'Accepted',reject:'Rejected',complete:'Completed',cancel:'Cancelled'} as Record<string,string>)[action];
       const updated=checked(await admin.from('bookings').update({booking_status:next}).eq('id',id).eq('booking_status',expected).select()); if (!updated.length) fail(409,'تغيرت حالة الحجز.'); return reply({success:true});
     }
@@ -192,7 +206,7 @@ Deno.serve(async req => {
       const wallet=checked(await admin.from('wallet_accounts').upsert({owner_id:user.id,currency:'sar'},{onConflict:'owner_id,currency',ignoreDuplicates:true}));
       const account=checked(await admin.from('wallet_accounts').select('*').eq('owner_id',user.id).eq('currency','sar').single());
       const entries=checked(await admin.from('wallet_topups').select('id,amount_minor,currency,status,created_at,stripe_payment_intent_id').eq('owner_id',user.id).order('created_at',{ascending:false}).limit(50));
-      return reply({balanceMinor:account.balance_minor,currency:'sar',topups:entries,publishableKey:Deno.env.get('STRIPE_PUBLISHABLE_KEY') || null,paymentsConfigured:!!Deno.env.get('STRIPE_SECRET_KEY') && !!Deno.env.get('STRIPE_WEBHOOK_SECRET') && !!Deno.env.get('STRIPE_PUBLISHABLE_KEY')});
+      return reply({balanceMinor:account.balance_minor,currency:'sar',topups:entries,publishableKey:null,paymentsConfigured:false});
     }
     if (path==='/api/Wallet/topup' && method==='POST') {
       const b=await input(req);
