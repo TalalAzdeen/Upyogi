@@ -1,4 +1,6 @@
 import '../l10n/app_language.dart';
+import 'dart:async';
+import '../services/logout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/booking_model.dart';
@@ -18,7 +20,11 @@ class AppointmentsScreen extends ConsumerStatefulWidget {
   ConsumerState<AppointmentsScreen> createState() => _AppointmentsScreenState();
 }
 
-class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
+class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> with WidgetsBindingObserver {
+  Timer? _refreshTimer;
+  bool _fetching = false;
+  bool _signingOut = false;
+  String? _error;
   List<BookingModel> _bookings = [];
   bool _isLoading = true;
   String _filter = "All"; // All, Upcoming, Completed, Cancelled
@@ -26,11 +32,32 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    if (ref.read(selectedRoleProvider) == 'Provider') _filter = 'New Requests';
     _loadBookings();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted && WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed && (ModalRoute.of(context)?.isCurrent ?? false)) {
+        _loadBookings(silent: true);
+      }
+    });
   }
 
-  Future<void> _loadBookings() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _loadBookings(silent: true);
+  }
+
+  Future<void> _loadBookings({bool silent = false}) async {
+    if (_fetching || !mounted) return;
+    _fetching = true;
+    if (!silent) setState(() { _isLoading = true; _error = null; });
     final role = ref.read(selectedRoleProvider);
     final isProvider = role == "Provider";
 
@@ -38,24 +65,27 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         ? await BookingService.getProviderBookings()
         : await BookingService.getCustomerBookings();
 
-    if (result["sessionExpired"] == true) return;
+    _fetching = false;
+    if (!mounted || result["sessionExpired"] == true) return;
 
     if (result["success"] == true) {
       final List data = result["data"];
       setState(() {
         _bookings = data.map((e) => BookingModel.fromJson(e)).toList();
         _isLoading = false;
+        _error = null;
       });
     } else {
-      setState(() => _isLoading = false);
+      setState(() { _isLoading = false; _error = 'Unable to load requests. Check your connection.'; });
     }
   }
 
   List<BookingModel> get _filteredBookings {
+    if (_filter == "New Requests") return _bookings.where((b) => b.bookingStatus == "Requested").toList();
     if (_filter == "All") return _bookings;
     if (_filter == "Upcoming") {
       return _bookings.where((b) =>
-          b.bookingStatus == "Requested" || b.bookingStatus == "Accepted").toList();
+          b.bookingStatus == "Requested" || ["Accepted", "OnTheWay"].contains(b.bookingStatus)).toList();
     }
     if (_filter == "Completed") {
       return _bookings.where((b) => b.bookingStatus == "Completed").toList();
@@ -75,13 +105,22 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
-        title: const LText("Appointments", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: LText(isProvider ? 'Service Requests' : 'Appointments', style: const TextStyle(fontWeight: FontWeight.bold)),
+        actions: [const LanguageButton(), IconButton(tooltip: tr(context, 'Refresh'),
+          onPressed: () => _loadBookings(), icon: const Icon(Icons.refresh)),
+          if (isProvider) IconButton(tooltip: tr(context, 'Logout'), onPressed: _signingOut ? null : () async {
+            setState(() => _signingOut = true);
+            await signOutAccount(context);
+            if (mounted) setState(() => _signingOut = false);
+          }, icon: const Icon(Icons.logout))],
         backgroundColor: kPrimaryPurple,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: Column(
         children: [
+          if (_error != null) MaterialBanner(content: LText(_error!),
+            actions: [TextButton(onPressed: () => _loadBookings(), child: const LText('Retry'))]),
           // Filter tabs
           Padding(
             padding: const EdgeInsets.all(16),
@@ -89,7 +128,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
               height: 40,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                children: ["All", "Upcoming", "Completed", "Cancelled"].map((f) {
+                children: [if (isProvider) "New Requests", "All", "Upcoming", "Completed", "Cancelled"].map((f) {
                   final selected = _filter == f;
                   return Padding(
                     padding: const EdgeInsetsDirectional.only(end: 8),
@@ -123,7 +162,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                         child: LText("No appointments found",
                             style: TextStyle(color: Colors.grey)))
                     : RefreshIndicator(
-                        onRefresh: _loadBookings,
+                        onRefresh: () => _loadBookings(),
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemCount: _filteredBookings.length,
@@ -131,7 +170,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                             return _BookingCard(
                               booking: _filteredBookings[index],
                               isProvider: isProvider,
-                              onStatusChanged: _loadBookings,
+                              onStatusChanged: () => _loadBookings(),
                             );
                           },
                         ),
@@ -157,6 +196,7 @@ class _BookingCard extends StatelessWidget {
   Color _statusColor(String status) {
     switch (status) {
       case "Accepted":
+      case "OnTheWay":
         return Colors.blue;
       case "Completed":
         return Colors.green;
@@ -279,7 +319,7 @@ class _BookingCard extends StatelessWidget {
                 "SAR ${booking.amount.toStringAsFixed(2)}",
                 style: const TextStyle(fontWeight: FontWeight.bold, color: kPrimaryPurple, fontSize: 14),
               ),
-              Container(
+              Flexible(child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: booking.paymentStatus == "Paid"
@@ -289,11 +329,12 @@ class _BookingCard extends StatelessWidget {
                 ),
                 child: LText(
                   booking.paymentStatus,
+                  maxLines: 2, textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 10,
                       color: booking.paymentStatus == "Paid" ? Colors.green : Colors.orange),
                 ),
-              ),
+              )),
             ],
           ),
 
@@ -320,7 +361,7 @@ class _BookingCard extends StatelessWidget {
                 ),
               ],
             ),
-          ] else if (isProvider && booking.bookingStatus == "Accepted") ...[
+          ] else if (isProvider && ["Accepted", "OnTheWay"].contains(booking.bookingStatus)) ...[
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -329,14 +370,14 @@ class _BookingCard extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => ProviderTrackingScreen(booking: booking)),
-                  );
+                  ).then((_) => onStatusChanged());
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: kPrimaryPurple),
-                child: const LText("Start Service", style: TextStyle(color: Colors.white)),
+                child: const LText("Travel & Service", style: TextStyle(color: Colors.white)),
               ),
             ),
           ] else if (!isProvider &&
-              (booking.bookingStatus == "Requested" || booking.bookingStatus == "Accepted")) ...[
+              (booking.bookingStatus == "Requested" || ["Accepted", "OnTheWay"].contains(booking.bookingStatus))) ...[
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -347,7 +388,7 @@ class _BookingCard extends StatelessWidget {
                 child: const LText("Cancel Booking"),
               ),
             ),
-            if (booking.bookingStatus == "Accepted") ...[
+            if (["Accepted", "OnTheWay"].contains(booking.bookingStatus)) ...[
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
