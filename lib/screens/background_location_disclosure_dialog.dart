@@ -29,10 +29,7 @@ class BackgroundLocationDisclosureDialog extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               const LText(
-                "This app collects location data to enable live tracking of "
-                "service providers, even when the app is closed or not in "
-                "use, so customers can see the provider's location in real "
-                "time during an active service.",
+                'Your location is shared only with this booking customer while journey tracking is open, including while using navigation. Sharing stops when you leave this screen, sign out, or complete the service. Keep this screen open during the journey.',
                 style: TextStyle(fontSize: 14, height: 1.4, color: Colors.black87),
               ),
               const SizedBox(height: 24),

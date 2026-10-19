@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'edit_user_profile_screen.dart';
 import 'my_services_screen.dart';
-import 'role_select_screen.dart';
-import 'wallet_screen.dart';
+import '../services/logout.dart';
 import 'notifications_screen.dart';
 import '../services/api_http.dart' as http;
 import '../services/app_config.dart';
@@ -22,6 +21,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String _fullName = "";
   String _role = "";
+  bool _isLoggingOut = false;
   String? _profileImageUrl;
 
   @override
@@ -41,20 +41,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    try {
-      await http.post(Uri.parse('${AppConfig.authBaseUrl}/logout'), headers: {'Authorization': 'Bearer ${prefs.getString('token') ?? ''}'});
-    } catch (_) { /* Always clear the local session even when offline. */ }
-    for (final key in ['token', 'refreshToken', 'expiresAt', 'role', 'fullName', 'profileImageUrl']) {
-      await prefs.remove(key);
-    }
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
-        (route) => false,
-      );
-    }
+    if (_isLoggingOut) return;
+    setState(() => _isLoggingOut = true);
+    await signOutAccount(context);
+    if (mounted) setState(() => _isLoggingOut = false);
   }
 
   Future<void> _changePassword() async {
@@ -109,12 +99,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(_fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             LText(_role, style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 30),
-            ListTile(
-              leading: const Icon(Icons.account_balance_wallet_outlined),
-              title: const LText('محفظتي'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletScreen())),
-            ),
             if (_role == "Provider")
               ListTile(
                 leading: const Icon(Icons.business_center_outlined, color: kPrimaryPurple),
@@ -161,9 +145,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: _logout,
+                onPressed: _isLoggingOut ? null : _logout,
                 icon: const Icon(Icons.logout, color: Colors.red),
-                label: const LText("Logout", style: TextStyle(color: Colors.red)),
+                label: LText(_isLoggingOut ? 'Signing out...' : 'Logout', style: const TextStyle(color: Colors.red)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.red),
                   padding: const EdgeInsets.symmetric(vertical: 14),

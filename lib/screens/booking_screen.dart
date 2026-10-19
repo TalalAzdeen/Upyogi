@@ -1,11 +1,8 @@
 import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/service_model.dart';
 import '../services/booking_service.dart';
-import '../services/payment_service.dart';
-import '../services/app_config.dart';
 import 'map_picker_screen.dart';
 
 const kPrimaryPurple = Color(0xFF6C5CE7);
@@ -28,7 +25,6 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _isSubmitting = false;
   LatLng? _selectedLocation;
   int? _pendingBookingId;
-  bool _paymentSubmitted = false;
 
   @override
   void dispose() {
@@ -85,10 +81,6 @@ class _BookingScreenState extends State<BookingScreen> {
 
   Future<void> _confirmBooking() async {
     if (_isSubmitting) return;
-    if (_paymentSubmitted) return _showError('Payment confirmation is pending. Check your bookings before paying again.');
-    if (!AppConfig.paymentsEnabled) {
-      return _showError('Online payment is not configured yet. Please contact the service operator.');
-    }
     if (_selectedDate == null) return _showError('Please select a date');
     if (_selectedTime == null) return _showError('Please select a time');
     if (_addressController.text.trim().isEmpty) return _showError('Please enter service address');
@@ -118,30 +110,9 @@ class _BookingScreenState extends State<BookingScreen> {
         }
         _pendingBookingId = booking['id'] as int;
       }
-      final payment = await PaymentService.createPaymentIntent(_pendingBookingId!);
-      if (!mounted || payment['sessionExpired'] == true) return;
-      final data = payment['data'];
-      if (payment['success'] != true || data is! Map || data['clientSecret'] is! String) {
-        _showError('Unable to start payment. Your booking is still pending.');
-        return;
-      }
-      await Stripe.instance.initPaymentSheet(paymentSheetParameters: SetupPaymentSheetParameters(
-        paymentIntentClientSecret: data['clientSecret'], merchantDisplayName: 'Upyogi'));
-      if (!mounted) return;
-      await Stripe.instance.presentPaymentSheet();
-      _paymentSubmitted = true;
-      if (!mounted) return;
-      final confirmed = await PaymentService.confirmPayment(_pendingBookingId!);
-      if (!mounted) return;
-      if (!confirmed) {
-        _showError('Payment was submitted but confirmation is pending. Check your bookings before paying again.');
-        return;
-      }
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
-      messenger.showSnackBar(const SnackBar(content: LText('Payment confirmed. Booking successful.')));
-    } on StripeException {
-      if (mounted) _showError('Payment was cancelled or could not be completed. Your booking remains pending.');
+      messenger.showSnackBar(const SnackBar(content: LText('Booking requested. Pay the technician after the work is completed.')));
     } catch (_) {
       if (mounted) _showError('Unable to complete the request. Check your bookings before retrying.');
     } finally {
@@ -311,7 +282,11 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 8),
             _field(_notesController, "Any special instructions...", maxLines: 3),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
+            const ListTile(leading: Icon(Icons.handshake_outlined),
+              title: LText('Pay after completion'),
+              subtitle: LText('Pay the technician directly after the work is completed. No payment is collected in the app.')),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -325,7 +300,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     ? const SizedBox(
                         height: 20, width: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const LText("Continue", style: TextStyle(fontSize: 16, color: Colors.white)),
+                    : const LText("Confirm Booking", style: TextStyle(fontSize: 16, color: Colors.white)),
               ),
             ),
             const SizedBox(height: 20),

@@ -1,5 +1,6 @@
 import '../l10n/app_language.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -22,6 +23,8 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
   final _locationService = LocationTrackingService();
   StreamSubscription<Position>? _positionStream;
   bool _isSharing = false;
+  bool _busy = false;
+  bool _sending = false;
   bool _isConnecting = true;
   String? _connectionError;
 
@@ -46,55 +49,57 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
   }
 
   Future<void> _startSharing() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      _showError("Please enable location services");
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (!mounted) return;
-
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      final agreed = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const BackgroundLocationDisclosureDialog(),
-      );
-
-      if (agreed != true) return;
+    if (_busy || _isSharing) return;
+    setState(() => _busy = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        _showError('Please enable location services'); return;
+      }
       if (!mounted) return;
-
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        _showError("Location permission denied");
-        return;
+      final agreed = await showDialog<bool>(context: context,
+        builder: (_) => const BackgroundLocationDisclosureDialog());
+      if (agreed != true || !mounted) return;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        _showError('Location permission denied'); return;
       }
-    }
-
-    setState(() => _isSharing = true);
-
-    const settings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10, // meters
-    );
-
-    _positionStream = Geolocator.getPositionStream(locationSettings: settings)
-        .listen((position) async {
-      try {
-        await _locationService.sendLocation(widget.booking.id,
-            position.latitude, position.longitude);
-      } catch (_) {
-        if (mounted) _showError('Unable to send your location. Check your connection.');
+      final first = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 25)));
+      if (!mounted) return;
+      if (!await BookingService.startTravel(widget.booking.id, first.latitude, first.longitude)) {
+        _showError('Unable to start the journey. Please try again.'); return;
       }
-    }, onError: (Object error) {
-      if (mounted) {
-        setState(() => _isSharing = false);
-        _showError('Location sharing stopped. Check location permission and try again.');
-      }
-    });
+      if (!mounted) return;
+      final LocationSettings settings = defaultTargetPlatform == TargetPlatform.android
+        ? AndroidSettings(accuracy: LocationAccuracy.high, distanceFilter: 10,
+            intervalDuration: const Duration(seconds: 5),
+            foregroundNotificationConfig: ForegroundNotificationConfig(
+              notificationTitle: tr(context, 'Journey tracking'),
+              notificationText: tr(context, 'Your location is shared with this booking customer.'),
+              enableWakeLock: true))
+        : const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10);
+      await _positionStream?.cancel();
+      _positionStream = Geolocator.getPositionStream(locationSettings: settings).listen((position) async {
+        if (_sending || !mounted) return;
+        _sending = true;
+        try {
+          await _locationService.sendLocation(widget.booking.id, position.latitude, position.longitude);
+        } catch (_) {
+          if (mounted) _showError('Unable to send your location. Check your connection.');
+        } finally { _sending = false; }
+      }, onError: (Object error) {
+        _positionStream?.cancel();
+        if (mounted) {
+          setState(() => _isSharing = false);
+          _showError('Location sharing stopped. Check location permission and try again.');
+        }
+      });
+      setState(() => _isSharing = true);
+      await _openNavigation();
+    } catch (_) {
+      _showError('Unable to start the journey. Please try again.');
+    } finally { if (mounted) setState(() => _busy = false); }
   }
 
   Future<void> _openNavigation() async {
@@ -111,20 +116,26 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
   }
 
   Future<void> _completeService() async {
+    if (_busy) return;
+    final confirmed = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(
+      title: const LText('Complete Service'),
+      content: const LText('Confirm the work is finished. Payment is arranged directly with the customer outside the app.'),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const LText('Cancel')),
+        FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const LText('Complete Service'))],
+    ));
+    if (confirmed != true || !mounted) return;
+    setState(() => _busy = true);
     final success = await BookingService.completeBooking(widget.booking.id);
     if (success) {
-      _positionStream?.cancel();
-      await _locationService.leaveBookingGroup(widget.booking.id);
+      await _positionStream?.cancel();
       await _locationService.disconnect();
       if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: LText("Service marked as completed!")),
-        );
+        messenger.showSnackBar(const SnackBar(content: LText('Service marked as completed!')));
       }
-    } else {
-      _showError("Failed to complete service");
-    }
+    } else { _showError('Failed to complete service'); }
+    if (mounted) setState(() => _busy = false);
   }
 
   void _showError(String msg) {
@@ -191,12 +202,9 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          _openNavigation();
-                          _startSharing();
-                        },
+                        onPressed: _busy ? null : _startSharing,
                         icon: const Icon(Icons.navigation, color: Colors.white),
-                        label: const LText("Start Service & Navigate",
+                        label: const LText('Start Journey & Share Location',
                             style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryPurple,
@@ -223,11 +231,13 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+
+                  ],
+                  const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _completeService,
+                        onPressed: _busy ? null : _completeService,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -237,7 +247,6 @@ class _ProviderTrackingScreenState extends State<ProviderTrackingScreen> {
                             style: TextStyle(color: Colors.white, fontSize: 16)),
                       ),
                     ),
-                  ],
                 ],
               ),
             ),
