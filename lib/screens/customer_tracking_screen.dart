@@ -20,6 +20,8 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
   final MapController _mapController = MapController();
   LatLng? _providerLocation;
   bool _isConnecting = true;
+  bool _available = true;
+  bool _mapReady = false;
   String? _connectionError;
 
   @override
@@ -32,16 +34,20 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
     if (mounted) setState(() { _isConnecting = true; _connectionError = null; });
     try {
     await _locationService.connect();
-    await _locationService.joinBookingGroup(widget.booking.id);
 
     _locationService.onLocationReceived((lat, lng) {
       if (!mounted) return;
       setState(() => _providerLocation = LatLng(lat, lng));
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _mapController.move(LatLng(lat, lng), 15);
+        if (mounted && _mapReady) _mapController.move(LatLng(lat, lng), 15);
       });
     });
 
+    _locationService.onAvailabilityChanged = (available) {
+      if (!mounted) return;
+      setState(() { _available = available; if (_locationService.lastUpdated == null) _providerLocation = null; });
+    };
+    await _locationService.joinBookingGroup(widget.booking.id);
     if (!mounted) return;
     setState(() => _isConnecting = false);
     } catch (_) {
@@ -55,6 +61,7 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
   void dispose() {
     _locationService.leaveBookingGroup(widget.booking.id);
     _locationService.disconnect();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -74,21 +81,22 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
           : _isConnecting
           ? const Center(child: CircularProgressIndicator(color: kPrimaryPurple))
           : _providerLocation == null
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     child: LText(
-                      "Waiting for provider to start the service...",
+                      _available ? 'Waiting for the technician to start the journey...' : 'Tracking connection lost or service ended. Location is no longer live.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey),
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ),
                 )
-              : FlutterMap(
+              : Stack(children: [FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
                     initialCenter: _providerLocation!,
                     initialZoom: 15,
+                    onMapReady: () => _mapReady = true,
                   ),
                   children: [
                     TileLayer(
@@ -108,6 +116,15 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
                     ),
                   ],
                 ),
+                Positioned(top: 12, left: 12, right: 12, child: Card(child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: LText(!_available ? 'Tracking connection lost or service ended. Location is no longer live.'
+                    : (_locationService.lastUpdated == null || DateTime.now().difference(_locationService.lastUpdated!).inSeconds > 60)
+                      ? 'Location has not updated recently. The technician may be offline.' : 'Technician on the way — location updates automatically.'),
+                ))),
+                const Positioned(bottom: 8, right: 8, child: ColoredBox(color: Colors.white,
+                  child: Padding(padding: EdgeInsets.all(4), child: Text('© OpenStreetMap contributors', style: TextStyle(fontSize: 10))))),
+              ]),
     );
   }
 }
