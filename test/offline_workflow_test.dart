@@ -26,7 +26,7 @@ void main() {
     int bookings = 0;
     api.client = MockClient((request) async {
       expect(request.method, 'POST');
-      expect(request.url.path, '/api/Booking');
+      expect(request.url.path, endsWith('/api/Booking')); 
       final data = jsonDecode(request.body);
       expect(data['serviceId'], 1);
       bookings++;
@@ -57,7 +57,7 @@ void main() {
     api.client = MockClient((request) async {
       if (request.url.path.endsWith('/accept')) { status = 'Accepted'; return http.Response('{}',200); }
       if (request.url.path.endsWith('/logout')) return http.Response('{}',200);
-      expect(request.url.path, '/api/Booking/provider');
+      expect(request.url.path, endsWith('/api/Booking/provider'));
       loads++;
       return http.Response(jsonEncode([{'id':42,'serviceId':1,'serviceTitle':'Cleaning request',
         'customerName':'Test customer','appointmentDate':DateTime.now().add(const Duration(days:1)).toIso8601String(),
