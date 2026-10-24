@@ -1,5 +1,8 @@
 // UI messages only; user-authored content is never translated.
 const englishToArabic = <String, String>{
+  "Booking confirmed": "تم تأكيد الحجز",
+  "The technician accepted your request. You can follow the booking in the app.": "وافق الفني على طلبك. يمكنك متابعة الحجز من التطبيق.",
+  "Select a valid service location on the map.": "حدد موقع الخدمة الصحيح من الخريطة.",
   "Sending...": "جارٍ الإرسال...",
   "Select the service location on the map.": "حدد موقع الخدمة على الخريطة.",
   "Search filters": "فلاتر البحث",
