@@ -128,7 +128,8 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                   child: s.imageUrl.isNotEmpty
                                       ? Image.network(s.imageUrl,
-                                          height: 60, width: 60, fit: BoxFit.cover)
+                                          height: 60, width: 60, cacheWidth: 180, fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => const SizedBox(height: 60, width: 60, child: Icon(Icons.home_repair_service_outlined)))
                                       : Container(
                                           height: 60, width: 60, color: kLightPurple,
                                           child: const Icon(Icons.image, color: kPrimaryPurple)),
