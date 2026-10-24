@@ -195,7 +195,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     TextButton(onPressed: _resending ? null : () async {
                       setState(() => _resending = true);
                       final result = await AuthService.resendConfirmation(_emailController.text);
-                      if (!mounted) return;
+                      if (!mounted || !context.mounted) return;
                       setState(() => _resending = false);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: LText(result['success'] == true
                         ? 'If your account needs verification, a confirmation message will be sent to its registered email.' : result['message'].toString())));
