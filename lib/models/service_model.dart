@@ -1,5 +1,10 @@
 class ServiceModel {
   final int id;
+  final double? latitude;
+  final double? longitude;
+  final double? distanceKm;
+  final bool isDemo;
+  bool get hasLocation => latitude != null && longitude != null && latitude!.isFinite && longitude!.isFinite && latitude!.abs() <= 90 && longitude!.abs() <= 180;
   final String imageUrl;
   final String title;
   final String category;
@@ -30,6 +35,7 @@ class ServiceModel {
 
   ServiceModel({
     required this.id,
+    this.latitude, this.longitude, this.distanceKm, this.isDemo = false,
     required this.imageUrl,
     required this.title,
     required this.category,
@@ -62,6 +68,10 @@ class ServiceModel {
   factory ServiceModel.fromJson(Map<String, dynamic> json) {
     return ServiceModel(
       id: json['id'] ?? 0,
+      latitude: double.tryParse('${json['latitude']}'),
+      longitude: double.tryParse('${json['longitude']}'),
+      distanceKm: double.tryParse('${json['distanceKm']}'),
+      isDemo: json['isDemo'] == true,
       imageUrl: json['imageUrl'] ?? '',
       title: json['title'] ?? '',
       category: json['category'] ?? '',
