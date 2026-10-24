@@ -85,6 +85,10 @@ async function sendConfirmationEmail(id:number) {
   const row=await one('booking_email_outbox','booking_id',id);
   if (!row || ['submitted','delivered','bounced','delayed'].includes(row.status)) return emailStatus(row);
   const recipient=await admin.auth.admin.getUserById(row.recipient_id);
+  if (recipient.error || !recipient.data.user) {
+    checked(await admin.from('booking_email_outbox').update({status:'failed',error_code:'recipient_unavailable',updated_at:new Date().toISOString()}).eq('id',row.id).in('status',['queued','failed','blocked']));
+    return 'failed';
+  }
   let message:any;
   try { message=confirmationMessage(recipient.data.user,row.payload,id); }
   catch (e) {
