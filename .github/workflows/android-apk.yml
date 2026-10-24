@@ -41,8 +41,10 @@ jobs:
       - name: Preserve resolved dependencies
         uses: actions/upload-artifact@v4
         with:
-          name: Sulh-1.5.0-lockfile
+          name: Sulh-1.6.0-lockfile
           path: pubspec.lock
+      - name: Verify geography and confirmation-email logic
+        run: node --test backend/supabase/functions/upyogi-api/domain.test.mjs
       - name: Analyze source
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Run regression tests
@@ -57,7 +59,7 @@ jobs:
           root = Path('build/app/outputs/flutter-apk')
           results = []
           for abi, label in [('arm64-v8a', 'arm64'), ('armeabi-v7a', 'arm32')]:
-              apk = root / f'Sulh-1.5.0-{label}.apk'
+              apk = root / f'Sulh-1.6.0-{label}.apk'
               shutil.copyfile(root / f'app-{abi}-release.apk', apk)
               size = apk.stat().st_size
               if size >= 50 * 1024 * 1024:
@@ -66,9 +68,9 @@ jobs:
           (root / 'size-report.json').write_text(json.dumps(results,indent=2))
       - uses: actions/upload-artifact@v4
         with:
-          name: Sulh-1.5.0-APK
+          name: Sulh-1.6.0-APK
           path: |
-            build/app/outputs/flutter-apk/Sulh-1.5.0-*.apk
+            build/app/outputs/flutter-apk/Sulh-1.6.0-*.apk
             build/app/outputs/flutter-apk/size-report.json
           if-no-files-found: error
           retention-days: 14

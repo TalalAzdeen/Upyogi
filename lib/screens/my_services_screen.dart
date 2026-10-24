@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/service_model.dart';
 import '../services/service_service.dart';
 import 'edit_service_screen.dart';
+import 'map_picker_screen.dart';
+import 'package:latlong2/latlong.dart';
 
 const kPrimaryPurple = Color(0xFF6C5CE7);
 const kLightPurple = Color(0xFFF3F1FE);
@@ -28,7 +30,7 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
     setState(() => _isLoading = true);
     final result = await ServiceApiService.getMyServices();
 
-    if (result["sessionExpired"] == true) return;
+    if (!mounted || result["sessionExpired"] == true) return;
 
     if (result["success"] == true) {
       final List data = result["data"];
@@ -38,6 +40,20 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
       });
     } else {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _setLocation(ServiceModel service) async {
+    final point = await Navigator.push<LatLng>(context, MaterialPageRoute(builder: (_) => MapPickerScreen(
+      initialLat: service.latitude, initialLng: service.longitude)));
+    if (point == null || !mounted) return;
+    try {
+      final saved = await ServiceApiService.updateServiceLocation(service.id, point.latitude, point.longitude);
+      if (!mounted) return;
+      if (saved) { _loadServices(); }
+      else { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: LText('Unable to save the service location. Try again.'))); }
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: LText('Unable to save the service location. Try again.')));
     }
   }
 
@@ -155,6 +171,9 @@ class _MyServicesScreenState extends State<MyServicesScreen> {
                                 ),
                               ],
                             ),
+                            TextButton.icon(onPressed: () => _setLocation(s), icon: const Icon(Icons.location_on_outlined),
+                              label: LText(s.hasLocation ? 'Update service location' : 'Set service location')),
+                            const LText('This is your advertised service location. Customers can see it when searching nearby.', style: TextStyle(fontSize: 11, color: Colors.grey)),
                             const SizedBox(height: 10),
                             Row(
                               children: [

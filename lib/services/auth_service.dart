@@ -40,6 +40,14 @@ class AuthService {
     }
   }
 
+  static Future<Map<String, dynamic>> resendConfirmation(String email) async {
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/resend-confirmation'),
+        headers: {'Content-Type':'application/json'}, body: jsonEncode({'email':email.trim()}));
+      return {'success':response.statusCode == 200, 'message':_message(response)};
+    } catch (_) { return {'success':false,'message':'Unable to connect. Please try again.'}; }
+  }
+
   static Future<Map<String, dynamic>> login(String email, String password) async {
     if (!email.contains('@') || password.isEmpty) {
       return {'success': false, 'message': 'Enter a valid email and password.'};

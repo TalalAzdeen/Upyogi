@@ -111,6 +111,13 @@ class BookingService {
     }
   }
 
+  static Future<String> resendConfirmationEmail(int id) async {
+    final response = await http.post(Uri.parse('$baseUrl/$id/confirmation-email'), headers: await _headers());
+    if (response.statusCode == 401) SessionManager.handleSessionExpired();
+    if (response.statusCode != 200) return 'failed';
+    return jsonDecode(response.body)['status'] as String? ?? 'failed';
+  }
+
   static Future<bool> startTravel(int id, double latitude, double longitude) async {
     final response = await http.put(Uri.parse('$baseUrl/$id/start-travel'),
       headers: await _headers(), body: jsonEncode({'latitude':latitude,'longitude':longitude}));

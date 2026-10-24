@@ -2,7 +2,7 @@ import '../l10n/app_language.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:geolocator/geolocator.dart';
+import '../services/location_access.dart';
 import 'package:geocoding/geocoding.dart';
 import '../services/provider_service.dart';
 import 'main_shell.dart';
@@ -91,20 +91,8 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
   Future<void> _fetchLocation() async {
     setState(() => _isFetchingLocation = true);
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception("Location services are disabled");
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception("Location permission denied");
-        }
-      }
-
-      Position position = await Geolocator.getCurrentPosition();
+      final position = await LocationAccess.current();
+      if (!mounted) return;
       _latitude = position.latitude;
       _longitude = position.longitude;
 
@@ -113,6 +101,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
         position.longitude,
       );
 
+      if (!mounted) return;
       if (placemarks.isNotEmpty) {
         final p = placemarks.first;
         _addressController.text =
@@ -126,7 +115,7 @@ class _ProviderProfileSetupScreenState extends State<ProviderProfileSetupScreen>
         _showError("Could not fetch location: $e");
       }
     } finally {
-      setState(() => _isFetchingLocation = false);
+      if (mounted) setState(() => _isFetchingLocation = false);
     }
   }
 

@@ -1,4 +1,4 @@
-# صلح — Sulh 1.5.0
+# صلح — Sulh 1.6.0
 
 [دليل التشغيل بالعربية](README_AR.md)
 
@@ -20,3 +20,9 @@ flutter build apk --release --split-per-abi --target-platform android-arm64,andr
 Use the arm64 APK for modern Android phones; arm32 is provided for older compatible devices. CI enforces a 50 MiB maximum per APK and publishes the exact sizes and SHA-256 hashes. These are release-mode test builds signed with the runner's debug signing key; replacing a previous build can require uninstalling it. Stable production signing and real two-device GPS testing remain separate steps.
 
 The package identifier stays `com.upyogi.service_app` to preserve update compatibility. Never include Supabase service-role keys in the client. New online charges remain disabled. Demo services/reviews are explicitly labelled; no fabricated successful payments are added.
+
+## Nearby search and booking email
+
+Version 1.6 adds GPS/manual-map search, PostGIS radius/category/price filters, exact distance ordering, public service-location editing and explicit demo labels. Distances are straight-line distances to the advertised service point; journey tracking remains private to booking participants.
+
+Booking acceptance queues one confirmation to the customer’s confirmed Auth email. Configure Resend secrets and signed delivery callbacks for real booking mail, and Custom SMTP separately for Auth verification. Submitted and delivered are distinct states. Without provider configuration the app explicitly says that mail has not been sent. See README_AR.md for setup, retry limits and remaining physical-device validation.

@@ -1,5 +1,6 @@
 class BookingModel {
   final int id;
+  final String confirmationEmailStatus;
   final int serviceId;
   final String serviceTitle;
   final String customerName;
@@ -15,6 +16,7 @@ class BookingModel {
 
   BookingModel({
     required this.id,
+    this.confirmationEmailStatus = 'not_requested',
     required this.serviceId,
     required this.serviceTitle,
     required this.customerName,
@@ -32,6 +34,7 @@ class BookingModel {
   factory BookingModel.fromJson(Map<String, dynamic> json) {
     return BookingModel(
       id: json['id'] ?? 0,
+      confirmationEmailStatus: json['confirmationEmailStatus'] ?? 'not_requested',
       serviceId: json['serviceId'] ?? 0,
       serviceTitle: json['serviceTitle'] ?? '',
       customerName: json['customerName'] ?? '',
