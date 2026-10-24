@@ -19,9 +19,9 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: WalletScreen()));
     await tester.pumpAndSettle();
     expect(find.text('SAR 12.50'), findsOneWidget);
-    expect(find.textContaining('Top-ups are not enabled'), findsOneWidget);
-    final button=tester.widget<FilledButton>(find.byWidgetPredicate((w) => w is FilledButton));
-    expect(button.onPressed,isNull);
+    expect(find.textContaining('Pay the technician directly'), findsOneWidget);
+    expect(find.byType(TextField),findsNothing);
+    expect(find.byIcon(Icons.add_card),findsNothing);
     expect(tester.takeException(),isNull);
   });
 
