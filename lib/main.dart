@@ -13,11 +13,11 @@ Future<void> main() async {
   await AppLanguage.instance.load();
   await dotenv.load(fileName: '.env', isOptional: true);
 
-  runApp(const ProviderScope(child: UpyogiApp()));
+  runApp(const ProviderScope(child: SulhApp()));
 }
 
-class UpyogiApp extends StatelessWidget {
-  const UpyogiApp({super.key});
+class SulhApp extends StatelessWidget {
+  const SulhApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class UpyogiApp extends StatelessWidget {
       builder: (context, locale, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Upyogi',
+          title: locale.languageCode == 'ar' ? 'صلح' : 'Sulh',
           navigatorKey: navigatorKey,
           locale: locale,
           supportedLocales: const [Locale('ar'), Locale('en')],
