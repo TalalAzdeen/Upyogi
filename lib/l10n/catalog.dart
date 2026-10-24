@@ -1,5 +1,6 @@
 // UI messages only; user-authored content is never translated.
 const englishToArabic = <String, String>{
+  "Sending...": "جارٍ الإرسال...",
   "Select the service location on the map.": "حدد موقع الخدمة على الخريطة.",
   "Search filters": "فلاتر البحث",
   "Sort by": "الترتيب حسب",
