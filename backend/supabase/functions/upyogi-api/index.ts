@@ -1,3 +1,4 @@
+import { validPoint, validEmail, searchParams, confirmationMessage, verifyEmailWebhook } from './domain.mjs';
 import { createClient } from 'npm:@supabase/supabase-js@2.95.0';
 
 const url = Deno.env.get('SUPABASE_URL')!;
@@ -69,9 +70,45 @@ async function webhook(req: Request) {
   }
   return reply({received:true});
 }
-const serviceView = (s: any) => ({ ...s.data, id:s.id, isActive:s.is_active });
+const serviceView = (s: any) => ({ ...s.data, id:s.id, isActive:s.is_active, isDemo:s.is_demo ?? !!s.data.demoSeed, latitude:s.latitude ?? s.data.latitude ?? null, longitude:s.longitude ?? s.data.longitude ?? null, distanceKm:s.distance_m==null?null:s.distance_m/1000 });
 const bookingView = (b: any) => ({ ...b.data, id:b.id, serviceId:b.service_id, amount:b.amount_minor/100, bookingStatus:b.booking_status, paymentStatus:b.payment_status==='Pending' && !b.stripe_payment_intent_id ? 'External' : b.payment_status });
 const reviewView = (r: any) => ({id:r.id,customerName:r.customer_name,rating:r.rating,comment:r.comment,createdAt:r.created_at});
+
+const emailConfigured = () => !!Deno.env.get('RESEND_API_KEY') && !!Deno.env.get('EMAIL_FROM');
+function emailStatus(row:any) {
+  if (!row) return 'not_requested';
+  if (['recipient_invalid','recipient_unverified'].includes(row.error_code)) return row.error_code;
+  if (!emailConfigured() && ['queued','blocked','failed'].includes(row.status)) return 'not_configured';
+  return row.status;
+}
+async function sendConfirmationEmail(id:number) {
+  const row=await one('booking_email_outbox','booking_id',id);
+  if (!row || ['submitted','delivered','bounced','delayed'].includes(row.status)) return emailStatus(row);
+  const recipient=await admin.auth.admin.getUserById(row.recipient_id);
+  let message:any;
+  try { message=confirmationMessage(recipient.data.user,row.payload,id); }
+  catch (e) {
+    const code=e instanceof Error && ['recipient_invalid','recipient_unverified'].includes(e.message)?e.message:'recipient_unavailable';
+    checked(await admin.from('booking_email_outbox').update({status:'blocked',error_code:code,updated_at:new Date().toISOString()}).eq('id',row.id).in('status',['queued','failed','blocked']));
+    return code;
+  }
+  if (!emailConfigured()) return 'not_configured';
+  const claimed=checked(await admin.rpc('claim_sulh_booking_email',{p_booking_id:id}));
+  if (!claimed?.length) return emailStatus(await one('booking_email_outbox','booking_id',id));
+  const lease=claimed[0];
+  try {
+    const response=await fetch('https://api.resend.com/emails',{method:'POST',signal:AbortSignal.timeout(8000),headers:{Authorization:`Bearer ${Deno.env.get('RESEND_API_KEY')}`,'Content-Type':'application/json','Idempotency-Key':`sulh-booking-confirmed/${id}`},body:JSON.stringify({from:Deno.env.get('EMAIL_FROM'),...message})});
+    const data=await response.json();
+    if(!response.ok || typeof data.id!=='string') throw Error(`provider_${response.status}`);
+    checked(await admin.from('booking_email_outbox').update({status:'submitted',provider_message_id:data.id,error_code:null,updated_at:new Date().toISOString()}).eq('id',lease.id).eq('lock_token',lease.lock_token));
+    const receipt=await one('email_delivery_receipts','provider_message_id',data.id);
+    if(receipt) checked(await admin.rpc('record_sulh_email_delivery',{p_message_id:data.id,p_status:receipt.status}));
+  } catch(e) {
+    const code=e instanceof Error && /^provider_\d+$/.test(e.message)?e.message:'provider_unavailable';
+    checked(await admin.from('booking_email_outbox').update({status:'failed',error_code:code,next_attempt_at:new Date(Date.now()+Math.min(1800,30*2**lease.attempt_count)*1000).toISOString(),updated_at:new Date().toISOString()}).eq('id',lease.id).eq('lock_token',lease.lock_token).eq('status','processing'));
+  }
+  return emailStatus(await one('booking_email_outbox','booking_id',id));
+}
 
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok',{headers:cors});
@@ -79,14 +116,28 @@ Deno.serve(async req => {
     const parsed = new URL(req.url);
     const path = parsed.pathname.replace(/^.*\/upyogi-api\/?/, '/').replace(/\/$/, '') || '/';
     const method = req.method;
-    if (path === '/health') return reply({status:'ok',currency:'sar',paymentMode:'external_after_completion',publishableKey:null,paymentsConfigured:false});
+    if (path === '/health') return reply({status:'ok',currency:'sar',paymentMode:'external_after_completion',publishableKey:null,paymentsConfigured:false,bookingEmailsConfigured:emailConfigured()});
+    if (path === '/email-webhook' && method==='POST') {
+      const secret=Deno.env.get('RESEND_WEBHOOK_SECRET'); if(!secret) fail(503,'Email webhook is not configured.');
+      const raw=await req.text();if(raw.length>256000) fail(413,'Event too large.');
+      let event:any;try{event=await verifyEmailWebhook(raw,req.headers,secret);}catch{fail(401,'Invalid signature.');}
+      const status=({'email.delivered':'delivered','email.bounced':'bounced','email.delivery_delayed':'delayed'} as Record<string,string>)[event.type];
+      if(status && typeof event.data?.email_id==='string') checked(await admin.rpc('record_sulh_email_delivery',{p_message_id:event.data.email_id,p_status:status}));
+      return reply({received:true});
+    }
     if (path === '/stripe-webhook' && method === 'POST') return await webhook(req);
     if (path === '/api/Auth/register' && method === 'POST') {
       const b = await input(req);
-      if (!text(b.fullName,100) || !text(b.email,254).includes('@') || typeof b.password !== 'string' || b.password.length < 8 || !['Customer','Provider'].includes(b.role)) fail(400, 'أدخل اسمًا وبريدًا صحيحين وكلمة مرور من 8 أحرف على الأقل.');
+      if (!text(b.fullName,100) || !validEmail(text(b.email,254)) || typeof b.password !== 'string' || b.password.length < 8 || !['Customer','Provider'].includes(b.role)) fail(400, 'أدخل اسمًا وبريدًا صحيحين وكلمة مرور من 8 أحرف على الأقل.');
       const {data,error} = await authClient().auth.signUp({email:text(b.email,254),password:b.password,options:{data:{fullName:text(b.fullName,100),role:b.role}}});
-      if (error) fail(400, 'تعذر إنشاء الحساب. تحقق من البيانات أو حاول لاحقًا.');
+      if (error) fail(400, 'تعذر إرسال بريد التفعيل أو إنشاء الحساب. تحقق من البريد وإعدادات الإرسال.');
       return reply({success:true,requiresEmailConfirmation:!data.session,message:'تم استلام طلب التسجيل. تحقق من بريدك لتأكيد الحساب.'});
+    }
+    if(path==='/api/Auth/resend-confirmation' && method==='POST') {
+      const b=await input(req);if(!validEmail(text(b.email,254)))fail(400,'استخدم بريدًا إلكترونيًا حقيقيًا صالحًا.');
+      const {error}=await authClient().auth.resend({type:'signup',email:text(b.email,254)});
+      if(error) fail(503,'تعذر إرسال بريد التفعيل. تحقق من إعداد مزود البريد أو حاول لاحقًا.');
+      return reply({success:true,message:'إذا كان الحساب يحتاج إلى تفعيل فستصلك رسالة على بريد التسجيل.'});
     }
     if ((path === '/api/Auth/login' || path === '/api/Auth/refresh') && method === 'POST') {
       const b = await input(req); const client = authClient();
@@ -96,11 +147,11 @@ Deno.serve(async req => {
       return reply({token:data.session.access_token,refreshToken:data.session.refresh_token,expiresAt:data.session.expires_at,user:{id:data.user.id,role:p.role,fullName:p.full_name,profileImageUrl:p.profile_image_url,email:data.user.email}});
     }
     if (path === '/api/Service' && method === 'GET') {
-      let rows = checked(await admin.from('services').select('*').eq('is_active',true).order('created_at',{ascending:false}).limit(200));
-      const q = parsed.searchParams;
-      rows = rows.filter((s:any) => (!q.get('search') || `${s.data.title} ${s.data.shortDescription}`.toLowerCase().includes(q.get('search')!.toLowerCase())) && (!q.get('city') || s.data.city === q.get('city')) && (!q.get('category') || s.data.category === q.get('category')) && (!q.get('minPrice') || s.data.startingPrice >= Number(q.get('minPrice'))) && (!q.get('maxPrice') || s.data.startingPrice <= Number(q.get('maxPrice'))));
+      let params:any;try{params=searchParams(parsed.searchParams);}catch{fail(400,'حدد إحداثيات صحيحة ونطاقًا من 1 إلى 200 كم وحدود سعر صحيحة.');}
+      const rows=checked(await admin.rpc('search_sulh_services',params));
       return reply(rows.map(serviceView));
     }
+
     if (/^\/api\/Service\/\d+$/.test(path) && method === 'GET') {
       const s = await one('services','id',Number(path.split('/')[3]));
       if (!s || !s.is_active) fail(404, 'الخدمة غير متاحة.');
@@ -149,7 +200,7 @@ Deno.serve(async req => {
       return reply({success:true});
     }
     if ((path==='/api/Wallet/topup' || path.startsWith('/api/Payment/')) && method==='POST') fail(410,'الدفع يكون مباشرة مع الفني بعد انتهاء العمل، خارج التطبيق.');
-    if (path === '/api/Auth/me') return reply({id:user.id,email:user.email,role:profile.role,fullName:profile.full_name,profileImageUrl:profile.profile_image_url});
+    if (path === '/api/Auth/me') return reply({id:user.id,email:user.email,emailVerified:!!user.email_confirmed_at,role:profile.role,fullName:profile.full_name,profileImageUrl:profile.profile_image_url});
     if (path === '/api/Auth/edit-profile' && method === 'PUT') {
       const b = await input(req); const updates:Record<string,unknown> = {};
       if (text(b.fullName,100)) updates.full_name = text(b.fullName,100);
@@ -162,8 +213,9 @@ Deno.serve(async req => {
     if (path === '/api/Provider/profile' && method === 'POST') {
       requireProvider(); const b = await input(req);
       const data:Record<string,any> = {};
+      if ((b.latitude!==undefined || b.longitude!==undefined) && (!String(b.latitude??'').trim() || !String(b.longitude??'').trim() || !validPoint(Number(b.latitude),Number(b.longitude)))) fail(400,'حدد موقعًا صحيحًا.');
       for (const field of ['bio','serviceCategory','workingDays','workingHoursStart','workingHoursEnd','address']) data[field]=text(b[field]);
-      for (const field of ['experienceYears','priceFrom','priceTo','serviceRadiusKm','latitude','longitude']) { const n=Number(b[field]); if (Number.isFinite(n)) data[field]=n; }
+      for (const field of ['experienceYears','priceFrom','priceTo','serviceRadiusKm','latitude','longitude']) { if (b[field] == null || !String(b[field]).trim()) continue; const n=Number(b[field]); if (Number.isFinite(n)) data[field]=n; }
       const uploaded = await image(b.profileImage,user.id); if (uploaded) data.profileImageUrl=uploaded;
       const kyc = await image(b.kycDocument,user.id,true); if (kyc) data.kycDocumentPath=kyc;
       const old = await one('provider_profiles','owner_id',user.id);
@@ -176,6 +228,10 @@ Deno.serve(async req => {
       if (method === 'DELETE') { checked(await admin.from('services').update({is_active:false}).eq('id',id)); return reply({success:true}); }
       if (path.endsWith('toggle-status')) { checked(await admin.from('services').update({is_active:!old.is_active}).eq('id',id)); return reply({success:true}); }
       const b=await input(req); const d={...old?.data};
+      const hasLocation=b.latitude!==undefined || b.longitude!==undefined;
+      if(hasLocation && (!String(b.latitude??'').trim() || !String(b.longitude??'').trim() || !validPoint(Number(b.latitude),Number(b.longitude)))) fail(400,'حدد موقع الخدمة الصحيح من الخريطة.');
+      if(!id && !hasLocation) fail(400,'حدد موقع الخدمة من الخريطة للظهور في البحث القريب.');
+      if(!id) d.isDemo=(user.email||'').endsWith('.test');
       for (const field of ['title','category','subcategory','shortDescription','detailedDescription','priceType','state','city','fullAddress','pincode','workingDays','startTime','endTime','providerName','phoneNumber','email','certifications','skills','serviceDuration']) if (b[field] !== undefined) d[field]=text(b[field]);
       for (const field of ['startingPrice','experienceYears','latitude','longitude']) if (b[field] !== undefined) { const n=Number(b[field]); if (!Number.isFinite(n)) fail(400,'قيمة رقمية غير صحيحة.'); d[field]=n; }
       for (const field of ['emergencyService','homeVisitAvailable','materialsIncluded']) if (b[field] !== undefined) d[field]=String(b[field])==='true';
@@ -191,7 +247,22 @@ Deno.serve(async req => {
       const booking=checked(await admin.from('bookings').insert({service_id:s.id,customer_id:user.id,provider_id:s.owner_id,amount_minor:Math.round(s.data.startingPrice*100),payment_status:'External',data}).select().single());
       checked(await admin.from('notifications').insert({owner_id:s.owner_id,title:'حجز جديد',message:`طلب خدمة ${s.data.title}`,related_id:booking.id})); return reply(bookingView(booking));
     }
-    if (['/api/Booking/customer','/api/Booking/provider'].includes(path) && method==='GET') return reply(checked(await admin.from('bookings').select('*').eq(path.endsWith('provider')?'provider_id':'customer_id',user.id).order('created_at',{ascending:false})).map(bookingView));
+    if (['/api/Booking/customer','/api/Booking/provider'].includes(path) && method==='GET') {
+      const bookings=checked(await admin.from('bookings').select('*').eq(path.endsWith('provider')?'provider_id':'customer_id',user.id).order('created_at',{ascending:false}));
+      const emails=bookings.length?checked(await admin.from('booking_email_outbox').select('booking_id,status,error_code').in('booking_id',bookings.map((b:any)=>b.id))):[];
+      const states=new Map(emails.map((e:any)=>[e.booking_id,emailStatus(e)]));
+      return reply(bookings.map((b:any)=>({...bookingView(b),confirmationEmailStatus:states.get(b.id)||'not_requested'})));
+    }
+    if(/^\/api\/Booking\/\d+\/confirmation-email$/.test(path) && ['GET','POST'].includes(method)) {
+      const id=Number(path.split('/')[3]);const booking=await one('bookings','id',id);
+      if(!booking || booking.customer_id!==user.id)fail(404,'الحجز غير موجود.');
+      if(!['Accepted','OnTheWay','Completed'].includes(booking.booking_status))fail(409,'البريد متاح بعد تأكيد الحجز.');
+      if(method==='POST') {
+        checked(await admin.from('booking_email_outbox').upsert({booking_id:id,recipient_id:user.id,payload:{serviceTitle:booking.data.serviceTitle,providerName:booking.data.providerName,appointmentDate:booking.data.appointmentDate,appointmentTime:booking.data.appointmentTime}},{onConflict:'booking_id',ignoreDuplicates:true}));
+        return reply({status:await sendConfirmationEmail(id)});
+      }
+      return reply({status:emailStatus(await one('booking_email_outbox','booking_id',id))});
+    }
     if (/^\/api\/Booking\/\d+\/(accept|reject|complete|cancel)$/.test(path) && method==='PUT') {
       const id=Number(path.split('/')[3]); const action=path.split('/')[4]; const b=await one('bookings','id',id);
       if (!b || (action==='cancel' ? b.customer_id!==user.id : b.provider_id!==user.id)) fail(404,'الحجز غير موجود.');
@@ -200,7 +271,10 @@ Deno.serve(async req => {
       if (action==='cancel' && (b.payment_status==='Paid' || b.stripe_payment_intent_id)) fail(409,'تواصل مع الدعم لاسترداد حجز مدفوع.');
       if (b.booking_status!==expected) fail(409,'تغيرت حالة الحجز. أعد تحميل الصفحة.');
       const next=({accept:'Accepted',reject:'Rejected',complete:'Completed',cancel:'Cancelled'} as Record<string,string>)[action];
-      const updated=checked(await admin.from('bookings').update({booking_status:next}).eq('id',id).eq('booking_status',expected).select()); if (!updated.length) fail(409,'تغيرت حالة الحجز.'); return reply({success:true});
+      const updated=checked(await admin.from('bookings').update({booking_status:next}).eq('id',id).eq('booking_status',expected).select()); if (!updated.length) fail(409,'تغيرت حالة الحجز.');
+      let confirmationEmailStatus:string|undefined;
+      if(action==='accept') { try { confirmationEmailStatus=await sendConfirmationEmail(id); } catch { console.error('Booking accepted; email attempt could not finish'); confirmationEmailStatus='failed'; } }
+      return reply({success:true,confirmationEmailStatus});
     }
     if (path==='/api/Wallet' && method==='GET') {
       const wallet=checked(await admin.from('wallet_accounts').upsert({owner_id:user.id,currency:'sar'},{onConflict:'owner_id,currency',ignoreDuplicates:true}));
