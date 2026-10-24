@@ -11,7 +11,7 @@ class RoleSelectScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: const Color(0xFF6C5CE7),
-      appBar: AppBar(backgroundColor: const Color(0xFF6C5CE7), foregroundColor: Colors.white, elevation: 0, actions: const [LanguageButton()]),
+      appBar: AppBar(title: const LText('Sulh'), backgroundColor: const Color(0xFF6C5CE7), foregroundColor: Colors.white, elevation: 0, actions: const [LanguageButton()]),
       body: Center(
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 24),

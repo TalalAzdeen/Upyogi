@@ -305,7 +305,8 @@ class _FeaturedServiceCard extends StatelessWidget {
           color: kLightPurple,
           image: service.imageUrl.isNotEmpty
               ? DecorationImage(
-                  image: NetworkImage(service.imageUrl),
+                  image: ResizeImage(NetworkImage(service.imageUrl), width: 720),
+                  onError: (_, _) {},
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
                     Colors.black.withValues(alpha: 0.15), BlendMode.darken),

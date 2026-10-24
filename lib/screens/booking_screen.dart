@@ -165,7 +165,8 @@ class _BookingScreenState extends State<BookingScreen> {
                     borderRadius: BorderRadius.circular(12),
                     child: widget.service.imageUrl.isNotEmpty
                         ? Image.network(widget.service.imageUrl,
-                            height: 60, width: 60, fit: BoxFit.cover)
+                            height: 60, width: 60, cacheWidth: 180, fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => const SizedBox(height: 60, width: 60, child: Icon(Icons.home_repair_service_outlined)))
                         : Container(height: 60, width: 60, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
