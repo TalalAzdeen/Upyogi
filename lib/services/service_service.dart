@@ -99,6 +99,7 @@ class ServiceApiService {
     double? minPrice,
     double? maxPrice,
     String? sortBy,
+    double? latitude, double? longitude, double radiusKm = 25, bool? includeDemo,
   }) async {
     try {
       final params = <String, String>{};
@@ -109,6 +110,13 @@ class ServiceApiService {
       if (maxPrice != null) params["maxPrice"] = maxPrice.toString();
       if (sortBy != null) params["sortBy"] = sortBy;
 
+      if ((latitude != null || longitude != null) && (latitude == null || longitude == null || !latitude.isFinite || !longitude.isFinite || latitude.abs() > 90 || longitude.abs() > 180)) {
+        return {'success':false,'message':'Select a valid search location.'};
+      }
+      if (latitude != null && longitude != null) {
+        params['latitude'] = '$latitude'; params['longitude'] = '$longitude'; params['radiusKm'] = '$radiusKm';
+      }
+      if (includeDemo != null) params['includeDemo'] = '$includeDemo';
       final uri = Uri.parse(baseUrl).replace(queryParameters: params);
       final response = await http.get(uri);
 
@@ -209,6 +217,15 @@ class ServiceApiService {
 
       return false;
     }
+  }
+
+  static Future<bool> updateServiceLocation(int id, double latitude, double longitude) async {
+    final prefs = await SharedPreferences.getInstance();
+    final response = await http.put(Uri.parse('$baseUrl/$id'),
+      headers: {'Content-Type':'application/json','Authorization':'Bearer ${prefs.getString('token') ?? ''}'},
+      body: jsonEncode({'latitude':latitude,'longitude':longitude}));
+    if (response.statusCode == 401) SessionManager.handleSessionExpired();
+    return response.statusCode == 200;
   }
 
   static Future<Map<String, dynamic>> updateService({
