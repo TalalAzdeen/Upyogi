@@ -1,5 +1,6 @@
 // UI messages only; user-authored content is never translated.
 const englishToArabic = <String, String>{
+  'Sulh': 'صلح',
   "External": "الدفع مع الفني بعد الإنجاز",
   "OnTheWay": "الفني في الطريق",
   "Pay after completion": "الدفع بعد انتهاء العمل",
