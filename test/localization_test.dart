@@ -12,7 +12,7 @@ void main() {
   });
 
   testWidgets('Arabic starts RTL; switching language updates labels and preserves entered email', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: MyApp()));
+    await tester.pumpWidget(const ProviderScope(child: SulhApp()));
     await tester.pumpAndSettle();
     expect(find.text('من أنت؟'), findsOneWidget);
     expect(Directionality.of(tester.element(find.text('من أنت؟'))), TextDirection.rtl);
@@ -52,7 +52,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(const MediaQuery(data:MediaQueryData(textScaler:TextScaler.linear(1.3)),child:ProviderScope(child:MyApp())));
+    await tester.pumpWidget(const MediaQuery(data:MediaQueryData(textScaler:TextScaler.linear(1.3)),child:ProviderScope(child:SulhApp())));
     await tester.pumpAndSettle();
     expect(find.text('مقدم خدمة'),findsOneWidget);
     expect(tester.takeException(),isNull);
