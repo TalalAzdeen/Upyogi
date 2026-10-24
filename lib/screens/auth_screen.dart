@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_provider.dart';
+import '../services/auth_service.dart';
 import '../services/provider_service.dart';
 import '../services/role_provider.dart';
 import 'main_shell.dart';
@@ -19,6 +20,7 @@ class AuthScreen extends ConsumerStatefulWidget {
 
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _isLogin = true;
+  bool _resending = false;
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -190,6 +192,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ),
                     ),
 
+                    TextButton(onPressed: _resending ? null : () async {
+                      setState(() => _resending = true);
+                      final result = await AuthService.resendConfirmation(_emailController.text);
+                      if (!mounted) return;
+                      setState(() => _resending = false);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: LText(result['success'] == true
+                        ? 'If your account needs verification, a confirmation message will be sent to its registered email.' : result['message'].toString())));
+                    }, child: LText(_resending ? 'Sending...' : 'Resend account verification email')),
                     const SizedBox(height: 16),
                     GestureDetector(
                       onTap: () => setState(() => _isLogin = !_isLogin),

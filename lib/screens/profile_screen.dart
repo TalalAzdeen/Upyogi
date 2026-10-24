@@ -21,6 +21,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String _fullName = "";
   String _role = "";
+  String? _accountEmail;
+  bool _emailVerified = false;
   bool _isLoggingOut = false;
   String? _profileImageUrl;
 
@@ -38,6 +40,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _role = prefs.getString("role") ?? "Customer";
       _profileImageUrl = prefs.getString("profileImageUrl");
     });
+    try {
+      final response = await http.get(Uri.parse('${AppConfig.authBaseUrl}/me'), headers: {'Authorization':'Bearer ${prefs.getString('token') ?? ''}'});
+      if (response.statusCode == 200 && mounted) {
+        final data = jsonDecode(response.body);
+        setState(() { _accountEmail = data['email'] as String?; _emailVerified = data['emailVerified'] == true; });
+      }
+    } catch (_) { /* Keep local account details while the network is unavailable. */ }
   }
 
   Future<void> _logout() async {
@@ -98,6 +107,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 12),
             Text(_fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             LText(_role, style: const TextStyle(color: Colors.grey)),
+            if (_accountEmail != null) ...[
+              const SizedBox(height: 8),
+              SelectableText(_accountEmail!, textDirection: TextDirection.ltr),
+              LText(_emailVerified ? 'Account email verified' : 'Account email is not verified'),
+              const LText('Booking confirmations use this account email, not the service contact email.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
             const SizedBox(height: 30),
             if (_role == "Provider")
               ListTile(

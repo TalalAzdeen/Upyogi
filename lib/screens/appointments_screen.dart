@@ -1,6 +1,7 @@
 import '../l10n/app_language.dart';
 import 'dart:async';
 import '../services/logout.dart';
+import '../services/confirmation_email_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/booking_model.dart';
@@ -337,6 +338,24 @@ class _BookingCard extends StatelessWidget {
               )),
             ],
           ),
+
+          if (!isProvider && ['Accepted','OnTheWay','Completed'].contains(booking.bookingStatus)) ...[
+            const SizedBox(height: 12),
+            LText(confirmationEmailMessage(booking.confirmationEmailStatus), style: TextStyle(fontSize: 12,
+              color: booking.confirmationEmailStatus == 'delivered' ? Colors.green : Colors.blueGrey)),
+            if (['not_requested','queued','not_configured','failed','blocked'].contains(booking.confirmationEmailStatus))
+              TextButton.icon(icon: const Icon(Icons.email_outlined), label: const LText('Request confirmation email'),
+                onPressed: () async {
+                  try {
+                    final status = await BookingService.resendConfirmationEmail(booking.id);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: LText(confirmationEmailMessage(status))));
+                    onStatusChanged();
+                  } catch (_) {
+                    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: LText('Unable to connect. Please try again.')));
+                  }
+                }),
+          ],
 
           // Action buttons
           if (isProvider && booking.bookingStatus == "Requested") ...[

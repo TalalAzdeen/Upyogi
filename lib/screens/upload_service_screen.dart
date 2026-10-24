@@ -1,4 +1,6 @@
 import '../l10n/app_language.dart';
+import 'package:latlong2/latlong.dart';
+import 'map_picker_screen.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,6 +20,7 @@ class UploadServiceScreen extends StatefulWidget {
 class _UploadServiceScreenState extends State<UploadServiceScreen> {
   final _picker = ImagePicker();
   XFile? _serviceImage;
+  LatLng? _serviceLocation;
 
   final _titleController = TextEditingController();
   final _subcategoryController = TextEditingController();
@@ -93,6 +96,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
     if (_priceController.text.trim().isEmpty) return _showError("Enter starting price");
     if (_serviceImage == null) return _showError("Add a service image");
     if (_selectedDays.isEmpty) return _showError("Select working days");
+    if (_serviceLocation == null) return _showError("Select the service location on the map.");
 
     setState(() => _isSubmitting = true);
 
@@ -111,6 +115,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
       city: _cityController.text.trim(),
       fullAddress: _addressController.text.trim(),
       pincode: _pincodeController.text.trim(),
+      latitude: _serviceLocation!.latitude, longitude: _serviceLocation!.longitude,
       workingDays: _selectedDays.join(","),
       startTime: _startTimeController.text,
       endTime: _endTimeController.text,
@@ -129,6 +134,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
       serviceImage: _serviceImage,
     );
 
+    if (!mounted) return;
     setState(() => _isSubmitting = false);
 
     if (result["success"] == true) {
@@ -163,6 +169,7 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
     _durationController.clear();
     setState(() {
       _serviceImage = null;
+      _serviceLocation = null;
       _selectedCategory = null;
       _selectedDays.clear();
       _emergencyService = false;
@@ -285,6 +292,13 @@ class _UploadServiceScreenState extends State<UploadServiceScreen> {
 
             const SizedBox(height: 24),
             _sectionHeader("Location"),
+            OutlinedButton.icon(onPressed: () async {
+              final point = await Navigator.push<LatLng>(context, MaterialPageRoute(builder: (_) => MapPickerScreen(
+                initialLat: _serviceLocation?.latitude, initialLng: _serviceLocation?.longitude)));
+              if (point != null && mounted) setState(() => _serviceLocation = point);
+            }, icon: const Icon(Icons.location_on_outlined), label: LText(_serviceLocation == null ? 'Set service location' : 'Service location selected')),
+            const LText('This is your advertised service location. Customers can see it when searching nearby.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 12),
             _field(_stateController, "State"),
             const SizedBox(height: 12),
             _field(_cityController, "City"),
