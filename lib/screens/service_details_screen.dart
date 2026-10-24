@@ -73,11 +73,15 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                     s.imageUrl.isNotEmpty
                         ? Image.network(
                             s.imageUrl,
+                            cacheWidth: 960,
+                            errorBuilder: (_, _, _) => const SizedBox(height: 280, child: Center(child: Icon(Icons.home_repair_service_outlined, size: 60))),
                             height: 280,
                             width: double.infinity,
                             fit: BoxFit.cover,
                           )
                         : Container(
+                            cacheWidth: 960,
+                            errorBuilder: (_, _, _) => const SizedBox(height: 280, child: Center(child: Icon(Icons.home_repair_service_outlined, size: 60))),
                             height: 280,
                             color: kLightPurple,
                             child: const Icon(Icons.image, size: 60, color: kPrimaryPurple),
