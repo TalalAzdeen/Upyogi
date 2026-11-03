@@ -7,6 +7,8 @@ import '../services/role_provider.dart';
 import 'main_shell.dart';
 import 'provider_profile_setup_screen.dart';
 import 'role_select_screen.dart';
+import 'provider_demo_screen.dart';
+import '../services/provider_demo_store.dart';
 
 const kPrimaryPurple = Color(0xFF6C5CE7);
 
@@ -36,7 +38,10 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     final role = prefs.getString("role");
 
     if (token == null || token.isEmpty) {
-      setState(() => _resolvedScreen = const RoleSelectScreen());
+      final demo = await ProviderDemoStore.load();
+      if (!mounted) return;
+      if (demo.active) ref.read(selectedRoleProvider.notifier).state = 'Provider';
+      setState(() => _resolvedScreen = demo.active ? const ProviderDemoScreen() : const RoleSelectScreen());
       return;
     }
 
