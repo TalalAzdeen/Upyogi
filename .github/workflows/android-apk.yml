@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: sulh-android-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -46,7 +49,7 @@ jobs:
       - name: Preserve resolved dependencies
         uses: actions/upload-artifact@v4
         with:
-          name: Sulh-1.7.0-lockfile
+          name: Sulh-1.8.0-lockfile
           path: pubspec.lock
       - name: Verify geography and confirmation-email logic
         run: node --test backend/supabase/functions/upyogi-api/*.test.mjs
@@ -64,7 +67,7 @@ jobs:
           root = Path('build/app/outputs/flutter-apk')
           results = []
           for abi, label in [('arm64-v8a', 'arm64'), ('armeabi-v7a', 'arm32')]:
-              apk = root / f'Sulh-1.7.0-{label}.apk'
+              apk = root / f'Sulh-1.8.0-{label}.apk'
               shutil.copyfile(root / f'app-{abi}-release.apk', apk)
               size = apk.stat().st_size
               if size >= 50 * 1024 * 1024:
@@ -73,9 +76,9 @@ jobs:
           (root / 'size-report.json').write_text(json.dumps(results,indent=2))
       - uses: actions/upload-artifact@v4
         with:
-          name: Sulh-1.7.0-APK
+          name: Sulh-1.8.0-APK
           path: |
-            build/app/outputs/flutter-apk/Sulh-1.7.0-*.apk
+            build/app/outputs/flutter-apk/Sulh-1.8.0-*.apk
             build/app/outputs/flutter-apk/size-report.json
           if-no-files-found: error
           retention-days: 14
