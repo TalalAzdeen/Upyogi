@@ -46,11 +46,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(advances,0);
     for (final label in ['Simulate technician acceptance','Simulate travel','Simulate service completion']) {
-      await tester.ensureVisible(find.text(label));
+      await tester.scrollUntilVisible(find.text(label), 180);
+      await tester.pumpAndSettle();
+      expect(find.text(label).hitTestable(), findsOneWidget);
       await tester.tap(find.text(label)); await tester.pumpAndSettle();
     }
+    await tester.scrollUntilVisible(find.text('Payment preview'), 180);
+    await tester.pumpAndSettle();
     expect(find.text('Payment preview'),findsOneWidget);
-    await tester.ensureVisible(find.byKey(const Key('skip-demo-payment')));
+    await tester.scrollUntilVisible(find.byKey(const Key('skip-demo-payment')), 180);
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('skip-demo-payment')));
     await tester.pumpAndSettle();
     expect(skipped,true); expect(advances,4);
@@ -64,6 +69,8 @@ void main() {
       return http.Response(jsonEncode(booking('Completed')),200);
     });
     await tester.pumpWidget(const MaterialApp(locale:Locale('en'),home:DemoJourneyScreen(bookingId:42)));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Payment preview'), 180);
     await tester.pumpAndSettle();
     expect(find.text('Payment preview'),findsOneWidget);
   });
