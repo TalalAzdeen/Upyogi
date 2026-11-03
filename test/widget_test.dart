@@ -27,6 +27,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Service Provider'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Use a real account'));
+    await tester.pumpAndSettle();
     await tester.pumpWidget(const SizedBox());
     await tester.pump();
     expect(tester.takeException(), isNull);
