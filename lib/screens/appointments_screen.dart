@@ -10,6 +10,7 @@ import '../services/role_provider.dart';
 import 'customer_tracking_screen.dart';
 import 'provider_tracking_screen.dart';
 import 'rating_dialog.dart';
+import 'demo_journey_screen.dart';
 
 const kPrimaryPurple = Color(0xFF6C5CE7);
 const kLightPurple = Color(0xFFF3F1FE);
@@ -329,7 +330,7 @@ class _BookingCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: LText(
-                  booking.paymentStatus,
+                  booking.demoPaymentSkipped ? 'Demo payment skipped' : booking.paymentStatus,
                   maxLines: 2, textAlign: TextAlign.center,
                   style: TextStyle(
                       fontSize: 10,
@@ -339,7 +340,7 @@ class _BookingCard extends StatelessWidget {
             ],
           ),
 
-          if (!isProvider && ['Accepted','OnTheWay','Completed'].contains(booking.bookingStatus)) ...[
+          if (!isProvider && !booking.demoScenario && ['Accepted','OnTheWay','Completed'].contains(booking.bookingStatus)) ...[
             const SizedBox(height: 12),
             LText(confirmationEmailMessage(booking.confirmationEmailStatus), style: TextStyle(fontSize: 12,
               color: booking.confirmationEmailStatus == 'delivered' ? Colors.green : Colors.blueGrey)),
@@ -357,6 +358,14 @@ class _BookingCard extends StatelessWidget {
                 }),
           ],
 
+          if (!isProvider && booking.demoScenario) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(icon: const Icon(Icons.science_outlined), label: const LText('Open demo journey'),
+              onPressed: () async {
+                await Navigator.push(context, MaterialPageRoute(builder: (_) => DemoJourneyScreen(bookingId: booking.id)));
+                onStatusChanged();
+              }),
+          ],
           // Action buttons
           if (isProvider && booking.bookingStatus == "Requested") ...[
             const SizedBox(height: 12),
@@ -407,7 +416,7 @@ class _BookingCard extends StatelessWidget {
                 child: const LText("Cancel Booking"),
               ),
             ),
-            if (["Accepted", "OnTheWay"].contains(booking.bookingStatus)) ...[
+            if (!booking.demoScenario && ["Accepted", "OnTheWay"].contains(booking.bookingStatus)) ...[
               const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,

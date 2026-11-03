@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../models/service_model.dart';
 import '../services/booking_service.dart';
 import 'map_picker_screen.dart';
+import 'demo_journey_screen.dart';
 
 const kPrimaryPurple = Color(0xFF6C5CE7);
 const kLightPurple = Color(0xFFF3F1FE);
@@ -25,6 +26,18 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _isSubmitting = false;
   LatLng? _selectedLocation;
   int? _pendingBookingId;
+  bool _demoScenario = false;
+
+  void _fillDemo() {
+    setState(() {
+      _selectedDate = DateTime.now().add(const Duration(days: 1));
+      _selectedTime = const TimeOfDay(hour: 10, minute: 0);
+      _addressController.text = 'عنوان افتراضي للتجربة — ${widget.service.city}';
+      _phoneController.text = '0500000000';
+      _notesController.text = 'طلب تجريبي فقط — لا زيارة أو دفع حقيقي';
+      _selectedLocation = widget.service.hasLocation ? LatLng(widget.service.latitude!, widget.service.longitude!) : null;
+    });
+  }
 
   @override
   void dispose() {
@@ -93,7 +106,7 @@ class _BookingScreenState extends State<BookingScreen> {
       if (_pendingBookingId == null) {
         final time = '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}';
         final result = await BookingService.createBooking(
-          serviceId: widget.service.id, appointmentDate: _selectedDate!,
+          serviceId: widget.service.id, appointmentDate: appointment,
           appointmentTime: time, serviceAddress: _addressController.text.trim(),
           notes: _notesController.text.trim(), customerPhone: _phoneController.text.trim(),
           latitude: _selectedLocation?.latitude, longitude: _selectedLocation?.longitude);
@@ -109,6 +122,11 @@ class _BookingScreenState extends State<BookingScreen> {
           return;
         }
         _pendingBookingId = booking['id'] as int;
+        _demoScenario = booking['demoScenario'] == true;
+      }
+      if (_demoScenario) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => DemoJourneyScreen(bookingId: _pendingBookingId!)));
+        return;
       }
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
@@ -152,6 +170,12 @@ class _BookingScreenState extends State<BookingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (widget.service.isDemo) ...[
+              const LText('Demo only'),
+              OutlinedButton.icon(onPressed: _isSubmitting ? null : _fillDemo,
+                icon: const Icon(Icons.auto_fix_high), label: const LText('Fill demo booking details')),
+              const SizedBox(height: 16),
+            ],
             // Service summary card
             Container(
               padding: const EdgeInsets.all(16),
@@ -284,9 +308,11 @@ class _BookingScreenState extends State<BookingScreen> {
             _field(_notesController, "Any special instructions...", maxLines: 3),
 
             const SizedBox(height: 20),
-            const ListTile(leading: Icon(Icons.handshake_outlined),
-              title: LText('Pay after completion'),
-              subtitle: LText('Pay the technician directly after the work is completed. No payment is collected in the app.')),
+            ListTile(leading: const Icon(Icons.handshake_outlined),
+              title: LText(widget.service.isDemo ? 'Demo only' : 'Pay after completion'),
+              subtitle: LText(widget.service.isDemo
+                ? 'Payment is simulated. Do not enter card details.'
+                : 'Pay the technician directly after the work is completed. No payment is collected in the app.')),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,

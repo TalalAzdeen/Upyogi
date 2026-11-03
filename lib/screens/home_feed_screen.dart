@@ -10,6 +10,7 @@ import '../models/service_model.dart';
 import '../services/notification_service.dart';
 import '../services/service_service.dart';
 import 'notifications_screen.dart';
+import '../services/demo_service.dart';
 import 'service_details_screen.dart';
 
 const kPrimaryPurple = Color(0xFF6C5CE7);
@@ -40,12 +41,32 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   double? _maxPrice;
   bool _includeDemo = true;
   bool _loadingLocation = false;
+  bool _generatingDemo = false;
   bool _showMap = false;
   String? _error;
   String? _locationError;
 
   @override
   void dispose() { _debounce?.cancel(); _searchController.dispose(); super.dispose(); }
+
+  Future<void> _generateDemo() async {
+    if (_generatingDemo) return;
+    setState(() => _generatingDemo = true);
+    try {
+      await DemoService.generateCatalog();
+      if (!mounted) return;
+      setState(() {
+        _includeDemo = true; _origin = null; _selectedCategory = 'All';
+        _minPrice = null; _maxPrice = null; _sortBy = 'newest'; _searchController.clear();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: LText('Demo catalog ready: 24 services in Riyadh, Jeddah and Dammam.')));
+      await _loadServices();
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: LText('Unable to generate demo data. Try again.')));
+    } finally {
+      if (mounted) setState(() => _generatingDemo = false);
+    }
+  }
 
   Future<void> _useMyLocation() async {
     if (_loadingLocation) return;
@@ -235,6 +256,11 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
                 const SizedBox(height: 20),
 
+                OutlinedButton.icon(onPressed: _generatingDemo ? null : _generateDemo,
+                  icon: _generatingDemo ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.science_outlined),
+                  label: const LText('Generate demo services')),
+                const LText('Generate once, search for a service, then book to try the full journey.'),
+                const SizedBox(height: 12),
                 // Search
                 Container(
                   decoration: BoxDecoration(
