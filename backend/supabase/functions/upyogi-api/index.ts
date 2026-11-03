@@ -1,4 +1,5 @@
 import { validPoint, validEmail, searchParams, confirmationMessage, verifyEmailWebhook } from './domain.mjs';
+import { demoSeed, isDemoScenario, nextDemoStatus } from './demo.mjs';
 import { createClient } from 'npm:@supabase/supabase-js@2.95.0';
 
 const url = Deno.env.get('SUPABASE_URL')!;
@@ -120,7 +121,7 @@ Deno.serve(async req => {
     const parsed = new URL(req.url);
     const path = parsed.pathname.replace(/^.*\/upyogi-api\/?/, '/').replace(/\/$/, '') || '/';
     const method = req.method;
-    if (path === '/health') return reply({status:'ok',currency:'sar',paymentMode:'external_after_completion',publishableKey:null,paymentsConfigured:false,bookingEmailsConfigured:emailConfigured()});
+    if (path === '/health') return reply({status:'ok',demoScenarioVersion:2,currency:'sar',paymentMode:'external_after_completion',publishableKey:null,paymentsConfigured:false,bookingEmailsConfigured:emailConfigured()});
     if (path === '/email-webhook' && method==='POST') {
       const secret=Deno.env.get('RESEND_WEBHOOK_SECRET'); if(!secret) fail(503,'Email webhook is not configured.');
       const raw=await req.text();if(raw.length>256000) fail(413,'Event too large.');
@@ -169,6 +170,31 @@ Deno.serve(async req => {
     const profile = await one('app_profiles','id',user.id);
     const isProvider = profile?.role === 'Provider';
     const requireProvider = () => { if (!isProvider) fail(403, 'هذا الإجراء لمقدم الخدمة.'); };
+    if (path === '/api/Demo/catalog' && method === 'POST') {
+      if (isProvider) fail(403,'ادخل بحساب عميل لتجربة الحجز.');
+      const created=checked(await admin.rpc('seed_sulh_demo_catalog'));
+      return reply({created, total:24});
+    }
+    if (/^\/api\/Demo\/bookings\/\d+(\/advance)?$/.test(path) && ['GET','POST'].includes(method)) {
+      const id=Number(path.split('/')[4]);
+      const b=await one('bookings','id',id);
+      if (!b || b.customer_id!==user.id) fail(404,'الحجز غير موجود.');
+      const s=await one('services','id',b.service_id);
+      if (!isDemoScenario(b,s)) fail(403,'المحاكاة متاحة للحجوزات التجريبية فقط.');
+      if (method==='GET' && !path.endsWith('/advance')) return reply(bookingView(b));
+      if (method!=='POST' || !path.endsWith('/advance')) fail(405,'طريقة الطلب غير صحيحة.');
+      const body=await input(req);
+      if (typeof body.skipPayment!=='boolean' || typeof body.expectedStatus!=='string') fail(400,'بيانات المحاكاة غير صحيحة.');
+      try { nextDemoStatus(body.expectedStatus,body.skipPayment); } catch { fail(409,'لا يمكن تنفيذ هذه الخطوة. أعد تحميل الحجز.'); }
+      const result=await admin.rpc('advance_sulh_demo_booking',{p_user_id:user.id,p_booking_id:id,p_expected_status:body.expectedStatus,p_skip_payment:body.skipPayment});
+      if (result.error) {
+        if (result.error.code==='P0002') fail(404,'الحجز غير موجود.');
+        if (result.error.code==='42501') fail(403,'الحجز غير تجريبي.');
+        if (['40001','22023'].includes(result.error.code)) fail(409,'تغيرت حالة الحجز. أعد تحميل الصفحة.');
+        checked(result);
+      }
+      return reply(bookingView(result.data[0]));
+    }
     if (path === '/api/Auth/logout' && method === 'POST') {
       const r = await fetch(`${url}/auth/v1/logout?scope=local`, {method:'POST',headers:{apikey:anon,Authorization:`Bearer ${token}`}});
       if (!r.ok) fail(502,'تعذر إنهاء الجلسة على الخادم.'); return reply({success:true});
@@ -247,7 +273,7 @@ Deno.serve(async req => {
       const b=await input(req); const s=await one('services','id',Number(b.serviceId));
       if (!s?.is_active || s.owner_id===user.id) fail(400,'الخدمة غير متاحة للحجز.');
       if (!b.appointmentDate || !Number.isFinite(Date.parse(b.appointmentDate)) || Date.parse(b.appointmentDate)<Date.now() || !text(b.appointmentTime) || !text(b.serviceAddress)) fail(400,'حدد موعدًا قادمًا وعنوان الخدمة.');
-      const data={appointmentDate:b.appointmentDate,appointmentTime:text(b.appointmentTime,30),serviceAddress:text(b.serviceAddress,500),notes:text(b.notes),customerPhone:text(b.customerPhone,30),customerName:profile.full_name,providerName:s.data.providerName,serviceTitle:s.data.title,latitude:b.latitude,longitude:b.longitude};
+      const data={demoScenario:s.is_demo===true && s.data.demoSeed===demoSeed,demoPaymentSkipped:false,appointmentDate:b.appointmentDate,appointmentTime:text(b.appointmentTime,30),serviceAddress:text(b.serviceAddress,500),notes:text(b.notes),customerPhone:text(b.customerPhone,30),customerName:profile.full_name,providerName:s.data.providerName,serviceTitle:s.data.title,latitude:b.latitude,longitude:b.longitude};
       const booking=checked(await admin.from('bookings').insert({service_id:s.id,customer_id:user.id,provider_id:s.owner_id,amount_minor:Math.round(s.data.startingPrice*100),payment_status:'External',data}).select().single());
       checked(await admin.from('notifications').insert({owner_id:s.owner_id,title:'حجز جديد',message:`طلب خدمة ${s.data.title}`,related_id:booking.id})); return reply(bookingView(booking));
     }
@@ -260,6 +286,7 @@ Deno.serve(async req => {
     if(/^\/api\/Booking\/\d+\/confirmation-email$/.test(path) && ['GET','POST'].includes(method)) {
       const id=Number(path.split('/')[3]);const booking=await one('bookings','id',id);
       if(!booking || booking.customer_id!==user.id)fail(404,'الحجز غير موجود.');
+      if(booking.data.demoScenario===true) return reply({status:'demo'});
       if(!['Accepted','OnTheWay','Completed'].includes(booking.booking_status))fail(409,'البريد متاح بعد تأكيد الحجز.');
       if(method==='POST') {
         checked(await admin.from('booking_email_outbox').upsert({booking_id:id,recipient_id:user.id,payload:{serviceTitle:booking.data.serviceTitle,providerName:booking.data.providerName,appointmentDate:booking.data.appointmentDate,appointmentTime:booking.data.appointmentTime}},{onConflict:'booking_id',ignoreDuplicates:true}));
@@ -277,7 +304,7 @@ Deno.serve(async req => {
       const next=({accept:'Accepted',reject:'Rejected',complete:'Completed',cancel:'Cancelled'} as Record<string,string>)[action];
       const updated=checked(await admin.from('bookings').update({booking_status:next}).eq('id',id).eq('booking_status',expected).select()); if (!updated.length) fail(409,'تغيرت حالة الحجز.');
       let confirmationEmailStatus:string|undefined;
-      if(action==='accept') { try { confirmationEmailStatus=await sendConfirmationEmail(id); } catch { console.error('Booking accepted; email attempt could not finish'); confirmationEmailStatus='failed'; } }
+      if(action==='accept' && b.data.demoScenario!==true) { try { confirmationEmailStatus=await sendConfirmationEmail(id); } catch { console.error('Booking accepted; email attempt could not finish'); confirmationEmailStatus='failed'; } }
       return reply({success:true,confirmationEmailStatus});
     }
     if (path==='/api/Wallet' && method==='GET') {
