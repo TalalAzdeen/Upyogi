@@ -10,7 +10,9 @@ class JourneyStore {
   static const key='sulh_connected_journey_v1';
   static const categories=['Plumber','Electrician','AC Repair','Cleaning','Carpenter','Painter','Appliance Repair','Pest Control'];
   static const cities=['Riyadh','Jeddah','Dammam'];
-  static Future<void> _tail=Future.value();
+  // Bind serialization to the persistence instance, rather than retaining an
+  // asynchronous zone from a replaced storage instance (e.g. a new test host).
+  static final _queues=Expando<_JourneyWriteQueue>();
   final SharedPreferences _prefs;
   final DateTime Function() _clock;
   List<JourneyService> _services=[];
@@ -53,7 +55,8 @@ class JourneyStore {
     'favorites':_favorites.toList(),'reminded':_reminded.toList(),'customerName':customerName,'activeRole':activeRole,'nextId':_nextId};
   Future<T> _write<T>(T Function() action){
     final result=Completer<T>();
-    _tail=_tail.then((_)async{
+    final queue=_queues[_prefs]??(_queues[_prefs]=_JourneyWriteQueue());
+    queue.tail=queue.tail.then((_)async{
       _read();
       try{final value=action();if(!await _prefs.setString(key,jsonEncode(_json())))throw StateError('Unable to save demo progress. Try again.');result.complete(value);}
       catch(e,st){_read();result.completeError(e,st);}
@@ -124,3 +127,5 @@ class JourneyStore {
     final stamp='${b.id}:${b.appointment.toIso8601String()}';if(['Accepted','OnTheWay'].contains(b.status)&&minutes>0&&minutes<=1800&&!_reminded.contains(stamp)){
       _reminded.add(stamp);_notify(b.id,'Demo appointment starts within 30 minutes',kind:'reminder');}}});
 }
+
+class _JourneyWriteQueue { Future<void> tail=Future.value(); }
