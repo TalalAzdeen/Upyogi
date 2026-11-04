@@ -1,5 +1,7 @@
 // UI messages only; user-authored content is never translated.
 const englishToArabic = <String, String>{
+  "Deactivate extra demo services before choosing this smaller package.": "أوقف الخدمات الزائدة قبل اختيار باقة بحد أقل.",
+  "Back to my current package": "العودة إلى باقتي الحالية",
   "Sulh for customers": "صلح للعميل",
   "Sulh customer": "صلح العميل",
   "A trusted start for every home": "بداية مطمئنة لكل بيت",
