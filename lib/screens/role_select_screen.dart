@@ -2,8 +2,8 @@ import '../l10n/app_language.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/role_provider.dart';
-import 'auth_screen.dart';
 import 'provider_demo_screen.dart';
+import 'experience_screen.dart';
 
 class RoleSelectScreen extends ConsumerWidget {
   const RoleSelectScreen({super.key});
@@ -57,7 +57,7 @@ class RoleSelectScreen extends ConsumerWidget {
                   ref.read(selectedRoleProvider.notifier).state = "Customer";
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const AuthScreen()),
+                    MaterialPageRoute(builder: (_) => const CustomerExperienceScreen()),
                   );
                 },
               ),
