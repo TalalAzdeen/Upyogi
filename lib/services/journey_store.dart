@@ -83,10 +83,10 @@ class JourneyStore {
   JourneyService service(int id)=>_services.firstWhere((s)=>s.id==id,orElse:()=>throw StateError('Service not found'));
   JourneyBooking booking(int id)=>_bookings.firstWhere((b)=>b.id==id,orElse:()=>throw StateError('Booking not found'));
   void _future(DateTime date){if(!date.isAfter(_clock())||date.isAfter(_clock().add(const Duration(days:365))))throw ArgumentError('Choose a future appointment within one year.');}
-  void _slot(String city,DateTime date,{int? exclude}){if(_bookings.any((b)=>b.id!=exclude&&!b.terminal&&b.city==city&&b.appointment.difference(date).inMinutes.abs()<60))throw StateError('This demo appointment is already reserved. Choose another time.');}
+  void _slot(DateTime date,{int? exclude}){if(_bookings.any((b)=>b.id!=exclude&&!b.terminal&&b.appointment.difference(date).inMinutes.abs()<60))throw StateError('This demo appointment is already reserved. Choose another time.');}
   Future<JourneyBooking> book({required int serviceId,required DateTime appointment,required String address,required String phone,required String notes})=>_write((){
     _future(appointment);if(customerName.isEmpty||address.trim().length<5||address.length>240||notes.length>500||!RegExp(r'^(?:0|\+?966)?5\d{8}$').hasMatch(phone.trim()))throw ArgumentError('Enter a name, address and valid Saudi mobile number.');
-    final s=service(serviceId);if(!s.active)throw StateError('This service is unavailable.');_slot(s.city,appointment);
+    final s=service(serviceId);if(!s.active)throw StateError('This service is unavailable.');_slot(appointment);
     final b=JourneyBooking(id:_nextId++,serviceId:s.id,title:s.title,category:s.category,city:s.city,customer:customerName,
       address:address.trim(),phone:phone.trim(),notes:notes.trim(),appointment:appointment,amount:s.price,
       history:[{'status':'Requested','at':_clock().toIso8601String()}]);
@@ -104,7 +104,7 @@ class JourneyStore {
       'OnTheWay':'Demo technician is on the way','InProgress':'Demo work started','Completed':'Demo service completed'}[next]!);
   });
   Future<void> reschedule(int id,DateTime at)=>_write((){final b=booking(id);if(b.status!='Requested')throw StateError('Only new requests can be rescheduled.');
-    _future(at);_slot(b.city,at,exclude:id);_replace(b,{'appointment':at.toIso8601String()});_notify(id,'Demo appointment rescheduled');});
+    _future(at);_slot(at,exclude:id);_replace(b,{'appointment':at.toIso8601String()});_notify(id,'Demo appointment rescheduled');});
   Future<void> settle(int id,String payment)=>_write((){final b=booking(id);if(b.status!='Completed'||b.payment!='Awaiting'||!['Skipped','CashSimulated'].contains(payment))throw StateError('Complete the service before reviewing payment.');
     _replace(b,{'payment':payment});_notify(id,payment=='Skipped'?'Demo payment skipped':'Demo cash receipt recorded');});
   Future<void> rate(int id,int rating,String review)=>_write((){final b=booking(id);if(b.status!='Completed'||b.payment=='Awaiting'||b.rating!=null)throw StateError('Review is available once, after completion and payment review.');

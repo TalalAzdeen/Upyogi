@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'journey_store.dart';
 
 class ProviderDemoPlan {
   const ProviderDemoPlan(this.id, this.name, this.price, this.services, this.photos, this.radiusKm);
@@ -112,9 +113,15 @@ class ProviderDemoStore {
     await _save();
   }
   Future<void> chooseAgain() async { stage='plans'; await _save(); }
+  Future<void> backToCurrentPlan() async { if(plan==null)throw StateError('Choose a package first.');stage='dashboard';await _save(); }
   Future<void> activatePlan(String id) async {
     if (!plans.any((p)=>p.id==id)) throw ArgumentError('Unknown plan');
     if (!acknowledged || name.isEmpty) throw StateError('Complete demo registration first.');
+    final selected=plans.firstWhere((p)=>p.id==id);
+    final catalog=await JourneyStore.load();
+    if(catalog.services.where((s)=>s.owned&&s.active).length>selected.services) {
+      throw StateError('Deactivate extra demo services before choosing this smaller package.');
+    }
     planId=id; subscriptionUntil=_nextMonth(DateTime.now()); stage='dashboard'; active=true;
     notices.insert(0,'Demo package activated. No payment was collected.');
     await _save();
