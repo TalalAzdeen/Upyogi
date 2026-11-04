@@ -10,6 +10,7 @@ import 'package:service_app/services/api_http.dart' as api;
 import 'package:service_app/services/journey_store.dart';
 import 'package:service_app/screens/experience_screen.dart';
 import 'package:service_app/screens/journey_booking_screen.dart';
+import 'package:service_app/services/provider_demo_store.dart';
 
 void main(){
   late http.Client old;
@@ -65,7 +66,27 @@ void main(){
     AppLanguage.instance.value=const Locale('ar');
     await t.pumpWidget(const ProviderScope(child:SulhApp()));await t.pumpAndSettle();await t.tap(find.text('عميل'));await t.pumpAndSettle();
     expect(find.text('صلح للعميل'),findsOneWidget);expect(t.takeException(),isNull);
-    await reveal(t,find.text('استخدام حساب حقيقي'));await t.tap(find.text('استخدام حساب حقيقي'));await t.pumpAndSettle();
+    await reveal(t,find.text(translateFor('Use a real account','ar')));await t.tap(find.text(translateFor('Use a real account','ar')));await t.pumpAndSettle();
     expect(find.text('مرحبًا بعودتك'),findsOneWidget);expect(t.takeException(),isNull);
+  });
+  testWidgets('the real role switch shares one booking through both workspaces',(t)async{
+    final s=await JourneyStore.load();await s.registerCustomer('Demo');
+    final b=await s.book(serviceId:1,appointment:DateTime.now().add(const Duration(days:1)),address:'Demo street',phone:'0500000000',notes:'');
+    final p=await ProviderDemoStore.load();await p.register(name:'Technician',specialty:'Plumber',acknowledged:true);await p.activatePlan('growth');
+    await t.pumpWidget(const ProviderScope(child:MaterialApp(home:CustomerExperienceScreen())));await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('journey-tab-1')));await t.pumpAndSettle();
+    await reveal(t,find.byKey(Key('open-booking-${b.id}')));await t.tap(find.byKey(Key('open-booking-${b.id}')));await t.pumpAndSettle();
+    await reveal(t,find.text('Switch to technician to respond'));await t.tap(find.text('Switch to technician to respond'));await t.pumpAndSettle();
+    expect(find.text('Technician dashboard'),findsOneWidget);
+    await t.tap(find.byKey(const Key('journey-tab-1')));await t.pumpAndSettle();
+    await reveal(t,find.byKey(Key('open-booking-${b.id}')));await t.tap(find.byKey(Key('open-booking-${b.id}')));await t.pumpAndSettle();
+    for(final next in ['Accepted','OnTheWay','InProgress','Completed']){
+      await reveal(t,find.byKey(Key('transition-$next')));await t.tap(find.byKey(Key('transition-$next')));await t.pumpAndSettle();
+    }
+    await t.pageBack();await t.pumpAndSettle();await t.tap(find.byKey(const Key('journey-tab-3')));await t.pumpAndSettle();
+    await reveal(t,find.text('Switch to customer demo'));await t.tap(find.text('Switch to customer demo'));await t.pumpAndSettle();
+    expect(find.text('Sulh customer'),findsOneWidget);expect((await JourneyStore.load()).activeRole,'Customer');
+    await t.tap(find.byKey(const Key('journey-tab-1')));await t.pumpAndSettle();
+    expect(find.text('Completed'),findsWidgets);expect(t.takeException(),isNull);
   });
 }

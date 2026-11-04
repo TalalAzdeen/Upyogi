@@ -18,9 +18,9 @@ void main() {
     expect(Directionality.of(tester.element(find.text('من أنت؟'))), TextDirection.rtl);
     await tester.tap(find.text('عميل'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('استخدام حساب حقيقي'), 160, scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(find.text(translateFor('Use a real account','ar')), 160, scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('استخدام حساب حقيقي'));
+    await tester.tap(find.text(translateFor('Use a real account','ar')));
     await tester.pumpAndSettle();
     expect(find.text('مرحبًا بعودتك'), findsOneWidget);
     await tester.enterText(find.byType(TextField).first, 'customer@upyogi.test');
