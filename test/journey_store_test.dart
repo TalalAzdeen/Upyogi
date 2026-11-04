@@ -85,4 +85,8 @@ void main() {
     await prefs.setString(JourneyStore.key,'broken');
     expect((await load()).services.length,24); expect(prefs.getString('token'),'real');
   });
+  test('the same demo technician cannot accept overlapping bookings across cities', () async {
+    final s=await load();await request(s,serviceId:1);
+    await expectLater(request(s,serviceId:9),throwsStateError);
+  });
 }

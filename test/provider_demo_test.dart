@@ -9,6 +9,7 @@ import 'package:service_app/services/api_http.dart' as api;
 import 'package:service_app/services/provider_demo_store.dart';
 import 'package:service_app/screens/provider_demo_screen.dart';
 import 'package:service_app/screens/auth_gate.dart';
+import 'package:service_app/services/journey_store.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -151,5 +152,23 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child:MaterialApp(locale:Locale('en'),home:AuthGate())));
     await tester.pumpAndSettle();
     expect(find.text('Technician dashboard'),findsOneWidget);
+  });
+  test('a downgrade requires the technician to reduce active services first', () async {
+    final p=await ProviderDemoStore.load();await p.register(name:'Demo',specialty:'Plumber',acknowledged:true);await p.activatePlan('pro');
+    final s=await JourneyStore.load();
+    for(var i=0;i<4;i++)await s.saveService(title:'Repair $i',category:'Plumber',city:'Riyadh',price:100,limit:25);
+    await expectLater(p.activatePlan('start'),throwsStateError);
+    expect((await ProviderDemoStore.load()).planId,'pro');
+    await s.setServiceActive(s.services.where((v)=>v.owned).first.id,false);
+    await p.activatePlan('start');expect((await ProviderDemoStore.load()).planId,'start');
+  });
+  testWidgets('renewal in the workspace survives exit through the parent screen', (tester) async {
+    final p=await ProviderDemoStore.load();await p.register(name:'Demo',specialty:'Plumber',acknowledged:true);await p.activatePlan('start');
+    final old=p.subscriptionUntil!;
+    await tester.pumpWidget(const ProviderScope(child:MaterialApp(home:ProviderDemoScreen())));await tester.pumpAndSettle();
+    await reveal(tester,find.text('Simulate package renewal'));await tester.tap(find.text('Simulate package renewal'));await tester.pumpAndSettle();
+    final renewed=(await ProviderDemoStore.load()).subscriptionUntil!;expect(renewed.isAfter(old),true);
+    await tester.tap(find.byIcon(Icons.logout).first);await tester.pumpAndSettle();
+    expect((await ProviderDemoStore.load()).subscriptionUntil,renewed);
   });
 }
