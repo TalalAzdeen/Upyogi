@@ -18,7 +18,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('User'));
     await tester.pumpAndSettle();
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Sulh for customers'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
