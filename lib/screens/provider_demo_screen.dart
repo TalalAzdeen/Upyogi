@@ -44,18 +44,18 @@ class _ProviderDemoScreenState extends State<ProviderDemoScreen> {
     if(_busy)return;
     setState((){_busy=true;_error=null;});
     try {await action();}
-    catch(_){if(mounted)setState(()=>_error='Unable to save demo progress. Try again.');}
+    catch(e){if(mounted)setState(()=>_error=e is StateError?'${e.message}':'Unable to save demo progress. Try again.');}
     finally{if(mounted)setState(()=>_busy=false);}
   }
   Future<void> _exit() async {
     if(_busy)return;
-    await _run(()async{await _store!.exit();await (await JourneyStore.load()).leave();});
+    await _run(()async{_store=await ProviderDemoStore.load();await _store!.exit();await (await JourneyStore.load()).leave();});
     if(!mounted || _error!=null)return;
     Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder:(_)=>const RoleSelectScreen()),(_)=>false);
   }
   Future<void> _realLogin() async {
     if(_busy)return;
-    await _run(()async{await _store!.exit();await (await JourneyStore.load()).leave();});
+    await _run(()async{_store=await ProviderDemoStore.load();await _store!.exit();await (await JourneyStore.load()).leave();});
     if(!mounted || _error!=null)return;
     Navigator.pushReplacement(context,MaterialPageRoute(builder:(_)=>const AuthScreen()));
   }
@@ -65,7 +65,7 @@ class _ProviderDemoScreenState extends State<ProviderDemoScreen> {
   Widget build(BuildContext context){
     final s=_store;
     if(s?.stage=='dashboard')return TechnicianWorkspaceScreen(onPlans:()async{
-      setState(()=>_selectedPlan=null);await _run(s!.chooseAgain);
+      setState(()=>_selectedPlan=null);await _run(()async{_store=await ProviderDemoStore.load();await _store!.chooseAgain();});
     },onRealLogin:_realLogin,onExit:_exit);
     return Scaffold(backgroundColor:const Color(0xFFF6F5FB),
       appBar:AppBar(title:LText(_title),actions:[const LanguageButton(),if(s!=null)IconButton(
@@ -171,6 +171,7 @@ class _ProviderDemoScreenState extends State<ProviderDemoScreen> {
     const SizedBox(height:16),
     FilledButton(key:const Key('activate-provider-plan'),onPressed:_busy||_selectedPlan==null?null:()=>_run(()=>s.activatePlan(_selectedPlan!)),
       child:const Padding(padding:EdgeInsets.all(14),child:LText('Continue with my selected package'))),
+    if(s.plan!=null)TextButton(onPressed:_busy?null:()=>_run(s.backToCurrentPlan),child:const LText('Back to my current package')),
   ];
   Widget _feature(String label,String value)=>Padding(padding:const EdgeInsets.symmetric(vertical:4),
     child:Row(children:[const Icon(Icons.check_circle_outline,size:18,color:_teal),const SizedBox(width:8),Expanded(child:LText(label)),Text(value,style:const TextStyle(fontWeight:FontWeight.bold))]));
