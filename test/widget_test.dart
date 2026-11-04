@@ -18,7 +18,7 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('User'));
     await tester.pumpAndSettle();
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Sulh for customers'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -26,6 +26,8 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: SulhApp()));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Service Provider'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Use a real account'));
     await tester.pumpAndSettle();
     await tester.pumpWidget(const SizedBox());
     await tester.pump();

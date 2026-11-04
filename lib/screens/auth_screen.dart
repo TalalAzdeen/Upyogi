@@ -7,6 +7,8 @@ import '../services/auth_service.dart';
 import '../services/provider_service.dart';
 import '../services/role_provider.dart';
 import 'main_shell.dart';
+import 'provider_demo_screen.dart';
+import 'experience_screen.dart';
 import 'provider_profile_setup_screen.dart';
 
 const kPrimaryPurple = Color(0xFF6C5CE7);
@@ -50,6 +52,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (role == 'Provider') ...[
+                OutlinedButton.icon(onPressed: authState.isLoading ? null : () => Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const ProviderDemoScreen())),
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white70)),
+                  icon: const Icon(Icons.science_outlined), label: const LText('Try technician registration without email verification')),
+                const SizedBox(height: 12),
+              ],
+              if (role != 'Provider') ...[
+                OutlinedButton.icon(onPressed: authState.isLoading ? null : () => Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const CustomerExperienceScreen())),
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white70)),
+                  icon: const Icon(Icons.science_outlined), label: const LText('Try customer demo without a password')),
+                const SizedBox(height: 12),
+              ],
               const SizedBox(height: 30),
               LText(
                 _isLogin ? "Welcome Back" : "Create your account",
